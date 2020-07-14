@@ -1,0 +1,16 @@
+dependencies {
+
+  implementation 'uk.ac.ox.softeng.maurodatamapper:mdm-common:4.0.0-SNAPSHOT'
+//  implementation 'uk.ac.ox.softeng.maurodatamapper:mdm-core:4.0.0-SNAPSHOT'
+  implementation 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:4.0.0-SNAPSHOT'
+  implementation 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:4.0.0-SNAPSHOT'
+
+  implementation group: 'org.codehaus.groovy', name: 'groovy'
+
+  // Logging
+  api group: 'org.slf4j', name: 'slf4j-api'
+  implementation group: 'ch.qos.logback', name: 'logback-classic'
+
+  implementation group: 'org.grails', name: 'grails-web-databinding'
+  implementation group: 'io.micronaut', name: 'micronaut-http-client'
+}
