@@ -17,10 +17,12 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
+import groovy.transform.CompileStatic
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.netty.cookies.NettyCookie
 
+@CompileStatic
 interface RestClientInterface {
 
     NettyCookie getCurrentCookie()

@@ -2,9 +2,11 @@ package uk.ac.ox.softeng.maurodatamapper.api.restful.exception
 
 import uk.ac.ox.softeng.maurodatamapper.api.exception.ApiException
 
+import groovy.transform.CompileStatic
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 
+@CompileStatic
 class ApiClientException extends ApiException {
 
     String endpoint

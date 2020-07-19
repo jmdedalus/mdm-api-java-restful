@@ -1,7 +1,9 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint
 
+import groovy.transform.CompileStatic
 import io.micronaut.http.uri.UriBuilder
 
+@CompileStatic
 enum MauroDataMapperEndpoint {
 
     LOGIN('authentication/login'),
@@ -62,7 +64,7 @@ enum MauroDataMapperEndpoint {
         this.representation = representation
     }
 
-    String build(Map<String, ? super Object> params = [:]) {
+    String build(Map params = [:]) {
         UriBuilder.of(representation)
             .expand(params)
             .toString()

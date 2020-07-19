@@ -1,26 +1,27 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
-import uk.ac.ox.softeng.maurodatamapper.api.restful.application.LocalMauroDataMapperApplication
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.MauroDataMapperConnection
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.CatalogueItemPrefix
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.MauroDataMapperEndpoint
+import uk.ac.ox.softeng.maurodatamapper.api.restful.render.json.JsonViewRenderer
 import uk.ac.ox.softeng.maurodatamapper.core.facet.Metadata
 import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.FileParameter
 import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.ModelImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
 import uk.ac.ox.softeng.maurodatamapper.datamodel.facet.SummaryMetadata
+import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.exporter.JsonExporterService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelFileImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelImporterProviderServiceParameters
-import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
 import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
-import grails.web.databinding.DataBinder
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.micronaut.core.type.Argument
 
 @Slf4j
+@CompileStatic
 @SuppressWarnings('unused')
-class MauroDataMapperClient implements DataBinder, Closeable {
+class MauroDataMapperClient implements Closeable {
 
     public static String DEFAULT_CONNECTION_NAME = '_default'
 
@@ -28,28 +29,27 @@ class MauroDataMapperClient implements DataBinder, Closeable {
 
     protected final String defaultConnectionName
 
+    JsonExporterService dataModelJsonExporterService
+
     MauroDataMapperClient(Properties properties) {
         this(DEFAULT_CONNECTION_NAME, properties)
-    }
-
-    MauroDataMapperClient(String connectionName, Properties properties) {
-        defaultConnectionName = connectionName
-        LocalMauroDataMapperApplication.instance.withCloseable {application ->
-            application.start()
-            openConnection(connectionName, properties)
-        }
     }
 
     MauroDataMapperClient(String baseUrl, String username, String password) {
         this(DEFAULT_CONNECTION_NAME, baseUrl, username, password)
     }
 
+    MauroDataMapperClient(String connectionName, Properties properties) {
+        this(connectionName, properties.getProperty("client.baseUrl"), properties.getProperty("client.username"),
+             properties.getProperty("client.password"))
+    }
+
     MauroDataMapperClient(String connectionName, String baseUrl, String username, String password) {
         defaultConnectionName = connectionName
-        LocalMauroDataMapperApplication.instance.withCloseable {application ->
-            application.start()
-            openConnection(connectionName, baseUrl, username, password)
-        }
+        JsonViewRenderer.instance.initialise()
+        openConnection(connectionName, baseUrl, username, password)
+        dataModelJsonExporterService = new JsonExporterService()
+        dataModelJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
     }
 
     MauroDataMapperConnection getDefaultConnection() {
@@ -58,11 +58,6 @@ class MauroDataMapperClient implements DataBinder, Closeable {
 
     MauroDataMapperConnection getConnection(String name) {
         NAMED_CONNECTIONS[name]
-    }
-
-    void openConnection(String name, Properties properties) {
-        closeConnection(name)
-        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(properties)
     }
 
     void openConnection(String name, String baseUrl, String username, String password) {
@@ -79,7 +74,6 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         NAMED_CONNECTIONS.each {k, conn ->
             conn.close()
         }
-        application.close()
     }
 
     void deleteFolder(UUID folderId, boolean permanent = true, String connectionName = defaultConnectionName) {
@@ -109,38 +103,42 @@ class MauroDataMapperClient implements DataBinder, Closeable {
     List<UUID> listSubFoldersInFolder(UUID folderId, String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(
             MauroDataMapperEndpoint.FOLDER_LIST_FOLDERS.build(folderId: folderId)
-        ).body().items.collect {Map m -> Utils.toUuid(m.id)}
+        ).body().items.collect {Map m -> Utils.toUuid(m.id as String)}
     }
 
     List<UUID> listTopLevelFolders(String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(
             MauroDataMapperEndpoint.FOLDERS_LIST.build()
-        ).body().items.collect {Map m -> Utils.toUuid(m.id)}
+        ).body().items.collect {Map m -> Utils.toUuid(m.id as String)}
     }
 
     UUID createFolder(String folderName, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
+        createFolder([label: folderName], parentFolderId, connectionName)
+    }
+
+    UUID createFolder(Map folderMap, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
         String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_CREATE.build() :
                           MauroDataMapperEndpoint.FOLDER_FOLDER_CREATE.build(folderId: parentFolderId)
-        String id = getConnection(connectionName).POST(endpoint, [label: folderName]).body().id
+        String id = getConnection(connectionName).POST(endpoint, folderMap).body().id
         Utils.toUuid(id)
     }
 
     List<UUID> listDataModelsInFolder(UUID folderId, String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(
             MauroDataMapperEndpoint.FOLDER_LIST_DATAMODELS.build(folderId: folderId)
-        ).body().items.collect {Map m -> Utils.toUuid(m.id)}
+        ).body().items.collect {Map m -> Utils.toUuid(m.id as String)}
     }
 
     List<UUID> listTerminologiesInFolder(UUID folderId, String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(
             MauroDataMapperEndpoint.FOLDER_LIST_TERMINOLOGIES.build(folderId: folderId)
-        ).body().items.collect {Map m -> Utils.toUuid(m.id)}
+        ).body().items.collect {Map m -> Utils.toUuid(m.id as String)}
     }
 
     List<UUID> listCodeSetsInFolder(UUID folderId, String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(
             MauroDataMapperEndpoint.FOLDER_LIST_CODESETS.build(folderId: folderId)
-        ).body().items.collect {Map m -> Utils.toUuid(m.id)}
+        ).body().items.collect {Map m -> Utils.toUuid(m.id as String)}
     }
 
     void deleteAllSubFoldersInFolder(UUID folderId, boolean permanent, String connectionName = defaultConnectionName) {
@@ -160,7 +158,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         String id = getConnection(connectionName).POST(
             MauroDataMapperEndpoint.SUMMARY_METADATA_CREATE.build(catalogueItemDomainType: catalogueItemPrefix.representation,
                                                                   catalogueItemId: catalogueItemId),
-            application.writeBody(summaryMetadata),
+            JsonViewRenderer.instance.renderDomain(summaryMetadata),
             Argument.of(Map)
         ).body().id
         Utils.toUuid(id)
@@ -195,7 +193,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         String id = getConnection(connectionName).POST(
             MauroDataMapperEndpoint.METADATA_CREATE.build(catalogueItemDomainType: catalogueItemPrefix.representation,
                                                           catalogueItemId: catalogueItemId),
-            application.writeBody(metadata),
+            JsonViewRenderer.instance.renderDomain(metadata),
             Argument.of(Map)
         ).body().id
         Utils.toUuid(id)
@@ -303,7 +301,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
             MauroDataMapperEndpoint.DATAMODEL_IMPORT.build(importerNamespace: importerNamespace,
                                                            importerName: importerName,
                                                            importerVersion: importerVersion),
-            application.writeBody(parameters),
+            JsonViewRenderer.instance.renderDomain(parameters),
             Argument.of(Map)
         ).body()
     }
@@ -316,7 +314,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
             MauroDataMapperEndpoint.TERMINOLOGY_IMPORT.build(importerNamespace: importerNamespace,
                                                              importerName: importerName,
                                                              importerVersion: importerVersion),
-            application.writeBody(parameters),
+            JsonViewRenderer.instance.renderDomain(parameters),
             Argument.of(Map)
         ).body()
     }
@@ -325,9 +323,10 @@ class MauroDataMapperClient implements DataBinder, Closeable {
                          String connectionName = defaultConnectionName) {
 
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
-                                                        application.jsonExporterService.
-                                                            exportDataModel(getConnection(connectionName).loggedInUser, dataModel)
-                                                            .toByteArray())
+                                                        dataModelJsonExporterService.exportDataModel(
+                                                            getConnection(connectionName).clientUser,
+                                                            dataModel
+                                                        ).toByteArray())
 
         DataModelFileImporterProviderServiceParameters parameters = new DataModelFileImporterProviderServiceParameters(
             folderId: folderId,
@@ -345,15 +344,16 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         Utils.toUuid(id)
     }
 
-
+    /*
+    TODO we need TerminologyJsonExporterService to exist
     UUID importTerminology(Terminology terminology, UUID folderId, String terminologyName, Boolean
         finalised, Boolean importAsNewDocumentationVersion, String connectionName = defaultConnectionName) {
 
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
-                                                        application.xmlTerminologyExporterService
-                                                            .exportTerminology(getConnection(connectionName).loggedInUser,
-                                                                               terminology)
-                                                            .toByteArray())
+                                                        terminologyJsonExporterService.exportDataModel(
+                                                            getConnection(connectionName).clientUser,
+                                                            terminology
+                                                        ).toByteArray())
 
         ModelImporterProviderServiceParameters parameters = new ModelImporterProviderServiceParameters(
             folderId: folderId,
@@ -370,23 +370,37 @@ class MauroDataMapperClient implements DataBinder, Closeable {
             parameters, connectionName).id
         Utils.toUuid(id)
     }
+     */
 
     UUID findDataModelIdByName(String name, String connectionName = defaultConnectionName) {
-        String id = getConnection(connectionName).GET(
+        Map dataModel = getConnection(connectionName).GET(
             MauroDataMapperEndpoint.DATAMODEL_LIST.build()
-        ).body().items.find {
-            it.label == name
-        }.id
-        Utils.toUuid(id)
+        ).body().items.find {Map m ->
+            isLabelMatch(m.label as String, name)
+        } as Map
+        Utils.toUuid(dataModel.id as String)
     }
 
     UUID findTerminologyIdByName(String name, String connectionName = defaultConnectionName) {
-        String id = getConnection(connectionName).GET(
+        Map terminology = getConnection(connectionName).GET(
             MauroDataMapperEndpoint.TERMINOLOGY_LIST.build()
-        ).body().items.find {
-            it.label == name
-        }.id
-        Utils.toUuid(id)
+        ).body().items.find {Map m ->
+            isLabelMatch(m.label as String, name)
+        } as Map
+        Utils.toUuid(terminology.id as String)
+    }
+
+    UUID findFolderByName(String name, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
+        String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_LIST_FOLDERS.build(folderId: parentFolderId) :
+                          MauroDataMapperEndpoint.FOLDERS_LIST.build()
+        Map folder = getConnection(connectionName).GET(endpoint).body().items.find {Map m ->
+            isLabelMatch(m.label as String, name)
+        } as Map
+        Utils.toUuid(folder.id as String)
+    }
+
+    Map getFolderById(UUID folderId, String connectionName = defaultConnectionName) {
+        getConnection(connectionName).GET(MauroDataMapperEndpoint.FOLDER_ID.build(id: folderId)).body()
     }
 
     Map getDataModelById(UUID dataModelId, String connectionName = defaultConnectionName) {
@@ -411,14 +425,14 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         updateDataModelDescription(dataModel.id, newDescription, connectionName)
     }
 
-    def updateDataModelDescription(UUID dataModelId, String newDescription, String connectionName = defaultConnectionName) {
+    Map updateDataModelDescription(UUID dataModelId, String newDescription, String connectionName = defaultConnectionName) {
         getConnection(connectionName).PUT(
             MauroDataMapperEndpoint.DATAMODEL_ID.build(id: dataModelId),
             [description: newDescription]
         ).body()
     }
 
-    def updateDataElementDescription(UUID dataModelId, UUID dataClassId, UUID dataElementId, String newDescription,
+    Map updateDataElementDescription(UUID dataModelId, UUID dataClassId, UUID dataElementId, String newDescription,
                                      String connectionName = defaultConnectionName) {
 
         getConnection(connectionName).PUT(
@@ -429,7 +443,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         ).body()
     }
 
-    def updateTermDescription(UUID terminologyId, UUID termId, String newDescription, String connectionName = defaultConnectionName) {
+    Map updateTermDescription(UUID terminologyId, UUID termId, String newDescription, String connectionName = defaultConnectionName) {
         getConnection(connectionName).PUT(
             MauroDataMapperEndpoint.TERM_ID.build(terminologyId: terminologyId,
                                                   id: termId),
@@ -437,7 +451,7 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         ).body()
     }
 
-    def updateDataClassDescription(UUID dataModelId, UUID parentClassId, UUID dataClassId, String newDescription,
+    Map updateDataClassDescription(UUID dataModelId, UUID parentClassId, UUID dataClassId, String newDescription,
                                    String connectionName = defaultConnectionName) {
         String endpoint = parentClassId ? MauroDataMapperEndpoint.DATACLASS_DATACLASS_ID.build(dataModelId: dataModelId,
                                                                                                dataClassId: parentClassId,
@@ -450,57 +464,15 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         ).body()
     }
 
-
-    void copyDataModel(UUID dataModelId, String targetConnectionName, UUID targetFolder, boolean
-        importAsNewDocumentationVersion, String connectionName = defaultConnectionName) {
-        DataModel dataModel = getDataModelById(dataModelId)
-        uploadDataModel(dataModel, targetFolder, dataModel.label, dataModel.finalised, importAsNewDocumentationVersion, targetConnectionName)
-    }
-
-    void copyFolder(String sourceConnectionName = "default", UUID folderId, String targetCatalogueName, UUID parentFolderId = null, boolean
-        importAsNewDocumentationVersion) {
-        Folder sourceFolder = getFolderById(folderId, sourceConnectionName)
-        UUID targetFolder = createFolder(sourceFolder.label, parentFolderId, targetCatalogueName)
-        List<UUID> dataModelsInSourceFolder = listDataModelsInFolder(folderId, sourceConnectionName)
-        dataModelsInSourceFolder.each {sourceDataModelId ->
-            copyDataModel(sourceDataModelId, targetCatalogueName, targetFolder, importAsNewDocumentationVersion, sourceConnectionName)
-        }
-        List<UUID> subFoldersInSourceFolder = listSubFoldersInFolder(folderId, sourceConnectionName)
-        subFoldersInSourceFolder.each {sourceSubFolderId ->
-            copyFolder(sourceConnectionName, sourceSubFolderId, targetCatalogueName, targetFolder, importAsNewDocumentationVersion)
-        }
-
-    }
-
-
-    UUID getFolderByName(String folderName, UUID parentFolder = null, String connectionName = defaultConnectionName) {
-
-
-        RestResponse restResponse
-        if (parentFolder) {
-            restResponse = getConnection(connectionName).GET(MauroDataMapperEndpoint.FOLDER_LIST_FOLDERS, [parentFolder.toString()])
-        } else {
-            restResponse = getConnection(connectionName).GET(MauroDataMapperEndpoint.FOLDERS_LIST)
-        }
-        String id = restResponse.json.items.find {it.label.trim() == folderName.trim()}?.id
-        if (!id) {
-            return null
-        }
-        return UUID.fromString(id)
-    }
-
-
-    UUID findOrCreateFolderByName(String folderName, UUID parentFolder = null, String connectionName = defaultConnectionName) {
-        UUID folderId = getFolderByName(folderName.trim(), parentFolder, connectionName)
-        if (!folderId) {
-            folderId = createFolder(folderName.trim(), parentFolder, connectionName)
-        }
-        return folderId
+    UUID findOrCreateFolderByName(String name, UUID parentFolder = null, String connectionName = defaultConnectionName) {
+        UUID folderId = findFolderByName(name, parentFolder, connectionName)
+        if (folderId) return folderId
+        createFolder(name.trim(), parentFolder, connectionName)
     }
 
     UUID findOrCreateFolderByPath(String folderPath, UUID parentFolder = null, String connectionName = defaultConnectionName) {
-        List<String> folderPathComponents = folderPath.split("\\.")
-        return findOrCreateFolderByPath(folderPathComponents, parentFolder, connectionName)
+        String[] folderPathComponents = folderPath.split("\\.")
+        findOrCreateFolderByPath(folderPathComponents.toList(), parentFolder, connectionName)
     }
 
     UUID findOrCreateFolderByPath(List<String> folderPathComponents, UUID parentFolder = null, String connectionName = defaultConnectionName) {
@@ -508,8 +480,10 @@ class MauroDataMapperClient implements DataBinder, Closeable {
         folderPathComponents.each {folderName ->
             newParent = findOrCreateFolderByName(folderName, newParent, connectionName)
         }
-        return newParent
+        newParent
     }
 
-
+    private static boolean isLabelMatch(String left, String right) {
+        left.trim() == right.trim()
+    }
 }

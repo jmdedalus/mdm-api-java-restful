@@ -1,11 +1,12 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection
 
+import uk.ac.ox.softeng.maurodatamapper.api.restful.client.ClientUser
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.RestClientInterface
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.MauroDataMapperEndpoint
 import uk.ac.ox.softeng.maurodatamapper.api.restful.exception.ApiClientException
-import uk.ac.ox.softeng.maurodatamapper.security.User
 
 import grails.web.databinding.DataBinder
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
@@ -23,19 +24,15 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import java.time.Duration
 
 @Slf4j
+@CompileStatic
 class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInterface {
 
     protected String baseUrl
 
-    @Deprecated
-    User loggedInUser
+    ClientUser clientUser
 
     HttpClient client
     NettyCookie currentCookie
-
-    MauroDataMapperConnection(Properties properties) {
-        this(properties.getProperty("client.baseUrl"), properties.getProperty("client.username"), properties.getProperty("client.password"))
-    }
 
     MauroDataMapperConnection(String baseUrl, String username, String password) {
         this.baseUrl = baseUrl + "/api/"
@@ -56,10 +53,11 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
     }
 
     void login(String usernameParam, String passwordParam) throws ApiClientException {
-        POST(MauroDataMapperEndpoint.LOGIN.build(), [
+        Map userMap = POST(MauroDataMapperEndpoint.LOGIN.build(), [
             username: usernameParam,
             password: passwordParam
-        ])
+        ]).body()
+        clientUser = new ClientUser(userMap)
     }
 
     void login(String[] args) {

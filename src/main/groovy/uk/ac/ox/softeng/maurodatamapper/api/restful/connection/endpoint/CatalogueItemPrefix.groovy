@@ -1,5 +1,8 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 enum CatalogueItemPrefix {
 
     DATAMODEL('dataModels'),

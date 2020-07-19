@@ -1,7 +1,10 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
+import groovy.transform.CompileStatic
+
 import java.nio.file.Paths
 
+@CompileStatic
 class MauroDataMapperClientFactory {
 
     static MauroDataMapperClient newFromPropertiesPath(String path) {
