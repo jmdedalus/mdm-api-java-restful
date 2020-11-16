@@ -13,4 +13,6 @@ dependencies {
 
   implementation group: 'org.grails', name: 'grails-web-databinding'
   implementation group: 'io.micronaut', name: 'micronaut-http-client'
+
+  implementation group: 'org.grails', name: 'grails-gorm-testing-support'//, version: '2.1.1'
 }

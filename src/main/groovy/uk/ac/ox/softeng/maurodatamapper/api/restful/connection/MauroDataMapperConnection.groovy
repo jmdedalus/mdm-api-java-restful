@@ -4,13 +4,16 @@ import uk.ac.ox.softeng.maurodatamapper.api.restful.client.ClientUser
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.RestClientInterface
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.MauroDataMapperEndpoint
 import uk.ac.ox.softeng.maurodatamapper.api.restful.exception.ApiClientException
+import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
 import grails.web.databinding.DataBinder
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.MutableHttpRequest
 import io.micronaut.http.client.DefaultHttpClient
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -52,12 +55,21 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         client.close()
     }
 
+    @CompileDynamic
     void login(String usernameParam, String passwordParam) throws ApiClientException {
-        Map userMap = POST(MauroDataMapperEndpoint.LOGIN.build(), [
+        def response = POST(MauroDataMapperEndpoint.LOGIN.build(), [
             username: usernameParam,
             password: passwordParam
-        ]).body()
-        clientUser = new ClientUser(userMap)
+        ])
+
+        if (response.status() == HttpStatus.OK) {
+            Map userMap = response.body()
+            userMap.id = Utils.toUuid(userMap.id)
+            clientUser = new ClientUser(userMap)
+        } else {
+            throw new ApiClientException('MDMCXX', 'Cannot login user', MauroDataMapperEndpoint.LOGIN.representation, HttpStatus.OK,
+                                         response)
+        }
     }
 
     void login(String[] args) {
@@ -127,65 +139,6 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         exchange(HttpRequest.DELETE(resourceEndpoint, body), responseBodyType)
     }
 
-    /*
-
-    HttpResponse<Map> GET(MauroDataMapperEndpoint endpoint, Map<String, ? super Object> params = [:]) {
-        GET(endpoint.build(params))
-    }
-
-    def <O> HttpResponse<O> GET(MauroDataMapperEndpoint endpoint, Argument<O> bodyType) {
-        GET(endpoint.build([:]), bodyType)
-    }
-
-    def <O> HttpResponse<O> GET(MauroDataMapperEndpoint endpoint, Map<String, ? super Object> params, Argument<O> bodyType) {
-        GET(endpoint.build(params), bodyType)
-    }
-
-
-
-
-
-
-
-
-    HttpResponse<Map> POST(MauroDataMapperEndpoint endpoint, Map body, Map<String, ? super Object> params = [:]) {
-        POST(endpoint.build(params), body)
-    }
-
-    def <O> HttpResponse<O> POST(MauroDataMapperEndpoint endpoint, O body, Argument<O> bodyType) {
-        POST(endpoint.build([:]), bodyType)
-    }
-
-    def <O> HttpResponse<O> POST(MauroDataMapperEndpoint endpoint, Map<String, ? super Object> params, Argument<O> bodyType) {
-        POST(endpoint.build(params), bodyType)
-    }
-
-
-
-
-
-
-
-
-
-    def <O> HttpResponse<O> PUT(MauroDataMapperEndpoint endpoint, Map body, Map<String, ? super Object> params = [:], HttpStatus expected =
-    HttpStatus.OK) {
-        PUT(endpoint.build(params), body)
-    }
-
-    def <O> HttpResponse<O> PUT(MauroDataMapperEndpoint endpoint, Map<String, ? super Object> params, Map body) {
-        PUT(endpoint, body, params)
-    }
-
-    def <O> HttpResponse<O> DELETE(MauroDataMapperEndpoint endpoint, Map<String, ? super Object> params = [:], HttpStatus expected = NO_CONTENT) {
-        DELETE(endpoint.build(params))
-    }
-
-    def <O> HttpResponse<O> DELETE(MauroDataMapperEndpoint endpoint, HttpStatus expected) {
-        DELETE(endpoint, [:], expected)
-    }
-*/
-
     private <B> HttpResponse<B> exchange(MutableHttpRequest request, Argument<B> bodyType) {
         try {
             // IIf there's a cookie saved then add it to the request
@@ -197,7 +150,7 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
             // Preserve the JSESSIONID cookie returned from the server
             if (response.header(HttpHeaderNames.SET_COOKIE)) {
                 Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(response.header(HttpHeaderNames.SET_COOKIE))
-                if (cookies.find {it.name() == 'JSESSIONID'}) currentCookie = new NettyCookie(cookies.find {it.name() == 'JSESSIONID'})
+                if (cookies.find { it.name() == 'JSESSIONID' }) currentCookie = new NettyCookie(cookies.find { it.name() == 'JSESSIONID' })
             }
             response
 

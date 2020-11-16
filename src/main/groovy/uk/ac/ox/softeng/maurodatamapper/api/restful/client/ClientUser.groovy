@@ -13,6 +13,14 @@ class ClientUser implements User {
     String tempPassword
     UUID id
 
+    ClientUser(Map map) {
+        firstName = map.firstName
+        lastName = map.lastName
+        emailAddress = map.emailAddress
+        tempPassword = map.tempPassword
+        id = map.id as UUID
+    }
+
     @Override
     String getDomainType() {
         ClientUser
