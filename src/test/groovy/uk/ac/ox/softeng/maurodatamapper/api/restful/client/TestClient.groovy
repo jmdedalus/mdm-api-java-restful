@@ -16,7 +16,8 @@ class TestClient {
 
             DataModel dm = new DataModel(label: 'test')
             dm.addToDataClasses(label: 'dc')
-
+            UUID folderId = client.findOrCreateFolderByName("Test Folder")
+            client.importDataModel(dm, folderId, "test",false, false)
 
 
             //            client.openConnection('readerConnection', 'http://localhost:8080', 'reader@mdm.com', 'password')
