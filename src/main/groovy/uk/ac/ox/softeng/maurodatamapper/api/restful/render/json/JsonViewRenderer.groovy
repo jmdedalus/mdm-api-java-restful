@@ -1,15 +1,21 @@
 package uk.ac.ox.softeng.maurodatamapper.api.restful.render.json
 
+import uk.ac.ox.softeng.maurodatamapper.core.MdmCoreGrailsPlugin
+import uk.ac.ox.softeng.maurodatamapper.datamodel.MdmPluginDatamodelGrailsPlugin
+import uk.ac.ox.softeng.maurodatamapper.terminology.MdmPluginTerminologyGrailsPlugin
 
 import grails.plugin.json.view.JsonViewConfiguration
 import grails.plugin.json.view.JsonViewTemplateEngine
 import grails.plugin.json.view.api.JsonView
 import grails.plugin.json.view.api.jsonapi.DefaultJsonApiIdRenderer
 import grails.plugin.json.view.api.jsonapi.JsonApiIdRenderStrategy
+import grails.views.resolve.PluginAwareTemplateResolver
 import groovy.text.Template
 import groovy.transform.CompileStatic
 import org.grails.datastore.mapping.keyvalue.mapping.config.KeyValueMappingContext
 import org.grails.datastore.mapping.model.MappingContext
+import org.grails.plugins.DefaultGrailsPlugin
+import org.grails.plugins.MockGrailsPluginManager
 import org.springframework.context.MessageSource
 import org.springframework.context.support.StaticMessageSource
 
@@ -40,6 +46,13 @@ class JsonViewRenderer {
             templateEngine.setMappingContext(mappingContext)
         }
         templateEngine.setJsonApiIdRenderStrategy(jsonApiIdRenderStrategy)
+        templateEngine.setTemplateResolver(new PluginAwareTemplateResolver(viewConfiguration).tap {
+            setPluginManager(new MockGrailsPluginManager().tap {
+                registerMockPlugin(new DefaultGrailsPlugin(MdmPluginDatamodelGrailsPlugin, null, null))
+                registerMockPlugin(new DefaultGrailsPlugin(MdmCoreGrailsPlugin, null, null))
+                registerMockPlugin(new DefaultGrailsPlugin(MdmPluginTerminologyGrailsPlugin, null, null))
+            })
+        })
     }
 
     /**

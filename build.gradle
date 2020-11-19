@@ -65,13 +65,14 @@ logger.quiet(
     "Available processors: ${Runtime.runtime.availableProcessors()} | " +
     "Max unit test parallel forks: ${Runtime.runtime.availableProcessors().intdiv(2) ?: 1}")
 
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, TimeUnit.SECONDS
+    resolutionStrategy.cacheDynamicVersionsFor 0, TimeUnit.SECONDS
+}
+
 afterEvaluate {
 
-    configurations.all {
-        // check for updates every build
-        resolutionStrategy.cacheChangingModulesFor 0, TimeUnit.SECONDS
-        resolutionStrategy.cacheDynamicVersionsFor 0, TimeUnit.SECONDS
-    }
     tasks.withType(JavaExec) {
         systemProperty 'env.logFileName', project.name
     }

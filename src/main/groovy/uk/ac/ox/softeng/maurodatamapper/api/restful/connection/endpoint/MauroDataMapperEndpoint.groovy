@@ -16,8 +16,8 @@ enum MauroDataMapperEndpoint {
     TERMINOLOGY_IMPORTERS('terminologies/providers/importers'),
     TERMINOLOGY_EXPORTERS('terminologies/providers/exporters'),
 
-    DATAMODEL_IMPORT('dataModels/import/${importerNamespace}/${importerName}/${importerVersion}'),
-    TERMINOLOGY_IMPORT('terminologies/import/${importerNamespace}/${importerName}/${importerVersion}'),
+    DATAMODEL_IMPORT('dataModels/import/{importerNamespace}/{importerName}/{importerVersion}'),
+    TERMINOLOGY_IMPORT('terminologies/import/{importerNamespace}/{importerName}/{importerVersion}'),
 
     SUMMARY_METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata'),
     SUMMARY_METADATA_CREATE('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata'),
