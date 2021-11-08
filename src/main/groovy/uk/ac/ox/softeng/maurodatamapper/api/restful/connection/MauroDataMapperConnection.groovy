@@ -1,3 +1,20 @@
+/*
+ * Copyright 2020 University of Oxford
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection
 
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.ClientUser
@@ -27,32 +44,54 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import java.time.Duration
 
 @Slf4j
-@CompileStatic
+//@CompileStatic
 class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInterface {
 
     protected String baseUrl
 
     ClientUser clientUser
 
+    UUID apiKey
+
     HttpClient client
     NettyCookie currentCookie
 
     MauroDataMapperConnection(String baseUrl, String username, String password) {
+        setClient(baseUrl)
+        login(username, password)
+    }
+
+    MauroDataMapperConnection(String baseUrl, UUID apiKey) {
+        setClient(baseUrl)
+        this.apiKey = apiKey
+        getUserDetails()
+    }
+
+    void setClient(String baseUrl) {
         this.baseUrl = baseUrl + "/api/"
         this.client = new DefaultHttpClient(new URL(this.baseUrl),
                                             new DefaultHttpClientConfiguration().with {
                                                 setReadTimeout(Duration.ofMinutes(30))
                                                 setReadIdleTimeout(Duration.ofMinutes(30))
+                                                setMaxContentLength(1000 * 1024 * 1024)
                                                 it
                                             })
 
-        login(username, password)
     }
 
     @Override
     void close() {
-        logout()
+        if(!apiKey) {
+            logout()
+        }
         client.close()
+    }
+
+    // When we've got an api key, go and find the current user's details
+    void getUserDetails() {
+        clientUser = new ClientUser()
+        clientUser.firstName = "Anonymous"
+        clientUser.lastName = "User"
     }
 
     @CompileDynamic
@@ -61,7 +100,6 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
             username: usernameParam,
             password: passwordParam
         ])
-
         if (response.status() == HttpStatus.OK) {
             Map userMap = response.body()
             userMap.id = Utils.toUuid(userMap.id)
@@ -142,13 +180,19 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
     private <B> HttpResponse<B> exchange(MutableHttpRequest request, Argument<B> bodyType) {
         try {
             // IIf there's a cookie saved then add it to the request
-            if (currentCookie) request.cookie(currentCookie)
+
+            if(apiKey) {
+                request.header("apiKey", apiKey.toString())
+            } else if (currentCookie) {
+                request.cookie(currentCookie)
+            }
 
             //TODO we should stop "blocking'
             HttpResponse<B> response = client.toBlocking().exchange(request, bodyType)
 
+            // If we're not sending an apiKey
             // Preserve the JSESSIONID cookie returned from the server
-            if (response.header(HttpHeaderNames.SET_COOKIE)) {
+            if (!apiKey && response.header(HttpHeaderNames.SET_COOKIE)) {
                 Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(response.header(HttpHeaderNames.SET_COOKIE))
                 if (cookies.find { it.name() == 'JSESSIONID' }) currentCookie = new NettyCookie(cookies.find { it.name() == 'JSESSIONID' })
             }

@@ -1,3 +1,20 @@
+/*
+ * Copyright 2020 University of Oxford
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint
 
 import groovy.transform.CompileStatic
@@ -19,27 +36,27 @@ enum MauroDataMapperEndpoint {
     DATAMODEL_IMPORT('dataModels/import/{importerNamespace}/{importerName}/{importerVersion}'),
     TERMINOLOGY_IMPORT('terminologies/import/{importerNamespace}/{importerName}/{importerVersion}'),
 
-    SUMMARY_METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata'),
+    SUMMARY_METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata?all=true'),
     SUMMARY_METADATA_CREATE('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata'),
     SUMMARY_METADATA_ID('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata/{id}'),
 
-    METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/metadata'),
+    METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/metadata?all=true'),
     METADATA_CREATE('{catalogueItemDomainType}/{catalogueItemId}/metadata'),
     METADATA_ID('{catalogueItemDomainType}/{catalogueItemId}/metadata/{id}'),
 
     FOLDER_CREATE('folders'),
-    FOLDERS_LIST('folders/?offset=0&max=1000'),
+    FOLDERS_LIST('folders/?all=true'),
 
     FOLDER_ID('folders/{id}'),
     FOLDER_DELETE("folders/{id}?permanent={permanent}"),
     FOLDER_FOLDER_CREATE("folders/{folderId}/folders"),
 
-    FOLDER_LIST_FOLDERS("folders/{folderId}/folders?offset=0&max=1000"),
-    FOLDER_LIST_DATAMODELS("folders/{folderId}/dataModels"),
-    FOLDER_LIST_TERMINOLOGIES("folders/{folderId}/terminologies"),
-    FOLDER_LIST_CODESETS("folders/{folderId}/codeSets"),
+    FOLDER_LIST_FOLDERS("folders/{folderId}/folders?all=true"),
+    FOLDER_LIST_DATAMODELS("folders/{folderId}/dataModels?all=true"),
+    FOLDER_LIST_TERMINOLOGIES("folders/{folderId}/terminologies?all=true"),
+    FOLDER_LIST_CODESETS("folders/{folderId}/codeSets?all=true"),
 
-    DATAMODEL_LIST('dataModels'),
+    DATAMODEL_LIST('dataModels?all=true'),
     DATAMODEL_ID('dataModels/{id}'),
     DATAMODEL_DELETE("dataModels/{dataModelId}?permanent={permanent}"),
     DATAMODEL_EXPORT("dataModels/{dataModelId}/export/{exporterNamespace}/{exporterName}/{exporterVersion}"),
@@ -48,7 +65,7 @@ enum MauroDataMapperEndpoint {
     DATACLASS_DATACLASS_ID("dataModels/{dataModelId}/dataClasses/{dataClassId}/dataClasses/{id}"),
     DATAELEMENT_ID("dataModels/{dataModelId}/dataClasses/{dataClassId}/dataElements/{id}"),
 
-    TERMINOLOGY_LIST('terminologies'),
+    TERMINOLOGY_LIST('terminologies?all=true'),
     TERMINOLOGY_ID('terminologies/{id}'),
     TERMINOLOGY_DELETE("terminologies/{terminologyId}?permanent={permanent}"),
     TERMINOLOGY_EXPORT("terminologies/{terminologyId}/export/{exporterNamespace}/{exporterName}/{exporterVersion}"),

@@ -1,17 +1,35 @@
 dependencies {
 
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-common:4.0.0-SNAPSHOT'
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:4.0.0-SNAPSHOT'
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:4.0.0-SNAPSHOT'
+  api 'uk.ac.ox.softeng.maurodatamapper:mdm-common:4.11.0'
+  compile 'uk.ac.ox.softeng.maurodatamapper:mdm-core:4.11.0'
+  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:4.11.0'
+  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:4.11.0'
+
+    compile "org.grails.plugins:gsp"
+    compile "org.grails.plugins:views-json"
 
   api group: 'org.codehaus.groovy', name: 'groovy'
 
   // Logging
-  api group: 'org.slf4j', name: 'slf4j-api'
+  compile group: 'org.slf4j', name: 'slf4j-api'
   api group: 'ch.qos.logback', name: 'logback-classic'
 
   api group: 'org.grails', name: 'grails-web-databinding'
   api group: 'io.micronaut', name: 'micronaut-http-client'
 
   api group: 'org.grails', name: 'grails-gorm-testing-support'
+  api "io.methvin:directory-watcher", {
+      exclude group: 'com.google.guava', module: 'guava'
+  }
+
+  compile group: 'org.flywaydb', name: 'flyway-core'
+  api "org.hibernate:hibernate-jcache"
+  api group: 'org.ehcache', name: 'ehcache'
+  api group: 'org.postgresql', name: 'postgresql'
+
+  compile group: 'commons-io', name: 'commons-io', version: '2.6'
+  compile 'info.picocli:picocli:4.6.1'
+
+
+
 }

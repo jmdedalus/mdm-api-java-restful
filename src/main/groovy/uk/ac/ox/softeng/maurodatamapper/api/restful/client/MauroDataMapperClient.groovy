@@ -1,3 +1,20 @@
+/*
+ * Copyright 2020 University of Oxford
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.MauroDataMapperConnection
@@ -9,7 +26,7 @@ import uk.ac.ox.softeng.maurodatamapper.core.facet.Metadata
 import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.FileParameter
 import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
 import uk.ac.ox.softeng.maurodatamapper.datamodel.facet.SummaryMetadata
-import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.exporter.JsonExporterService
+import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.exporter.DataModelJsonExporterService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelFileImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
@@ -35,7 +52,7 @@ class MauroDataMapperClient implements Closeable {
 
     protected final String defaultConnectionName
 
-    JsonExporterService dataModelJsonExporterService
+    DataModelJsonExporterService dataModelJsonExporterService
 
     TerminologyJsonExporterService terminologyJsonExporterService
 
@@ -47,6 +64,10 @@ class MauroDataMapperClient implements Closeable {
         this(DEFAULT_CONNECTION_NAME, baseUrl, username, password)
     }
 
+    MauroDataMapperClient(String baseUrl, UUID apiKey) {
+        this(DEFAULT_CONNECTION_NAME, baseUrl, apiKey)
+    }
+
     MauroDataMapperClient(String connectionName, Properties properties) {
         this(connectionName, properties.getProperty("client.baseUrl"), properties.getProperty("client.username"),
              properties.getProperty("client.password"))
@@ -54,16 +75,31 @@ class MauroDataMapperClient implements Closeable {
 
     MauroDataMapperClient(String connectionName, String baseUrl, String username, String password) {
         defaultConnectionName = connectionName
-        JsonViewRenderer.instance.initialise()
         openConnection(connectionName, baseUrl, username, password)
-        dataModelJsonExporterService = new JsonExporterService()
+        initialiseServices()
+    }
+
+    MauroDataMapperClient(String connectionName, String baseUrl, UUID apiKey) {
+        defaultConnectionName = connectionName
+        openConnection(connectionName, baseUrl, apiKey)
+        initialiseServices()
+    }
+
+    void initialiseServices() {
+        JsonViewRenderer.instance.initialise()
+        dataModelJsonExporterService = new DataModelJsonExporterService()
         dataModelJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
         terminologyJsonExporterService = new TerminologyJsonExporterService()
         terminologyJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
+
     }
 
     MauroDataMapperConnection getDefaultConnection() {
         getConnection(defaultConnectionName)
+    }
+
+    MauroDataMapperConnection getConnection() {
+        getDefaultConnection()
     }
 
     MauroDataMapperConnection getConnection(String name) {
@@ -74,6 +110,18 @@ class MauroDataMapperClient implements Closeable {
         closeConnection(name)
         NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, username, password)
     }
+
+    void openConnection(String name, String baseUrl, UUID apiKey) {
+        closeConnection(name)
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, apiKey)
+    }
+
+    void openConnection(String name, Properties properties) {
+        closeConnection(name)
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(properties.getProperty("client.baseUrl"), properties.getProperty("client.username"),
+                                                                properties.getProperty("client.password"))
+    }
+
 
     void closeConnection(String name) {
         NAMED_CONNECTIONS.remove(name)?.close()
@@ -127,8 +175,8 @@ class MauroDataMapperClient implements Closeable {
     }
 
     UUID createFolder(Map folderMap, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
-        String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_CREATE.build() :
-                          MauroDataMapperEndpoint.FOLDER_FOLDER_CREATE.build(folderId: parentFolderId)
+        String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_FOLDER_CREATE.build(folderId: parentFolderId) :
+                          MauroDataMapperEndpoint.FOLDER_CREATE.build()
         String id = getConnection(connectionName).POST(endpoint, folderMap).body().id
         Utils.toUuid(id)
     }
@@ -250,19 +298,19 @@ class MauroDataMapperClient implements Closeable {
     }
 
     Map getJsonDataModelImporterProperties(String connectionName = defaultConnectionName) {
-        listDataModelImporters(connectionName).find { imp -> imp.name == 'JsonImporterService' }
+        listDataModelImporters(connectionName).find { imp -> imp.name == 'DataModelJsonImporterService' }
     }
 
     Map getJsonTerminologyImporterProperties(String connectionName = defaultConnectionName) {
-        listDataModelImporters(connectionName).find { imp -> imp.name == 'JsonImporterService' }
+        listTerminologyImporters(connectionName).find { imp -> imp.name == 'TerminologyJsonImporterService' }
     }
 
     Map getJsonDataModelExporterProperties(String connectionName = defaultConnectionName) {
-        listDataModelExporters(connectionName).find { imp -> imp.name == 'JsonExporterService' }
+        listDataModelExporters(connectionName).find { imp -> imp.name == 'DataModelJsonExporterService' }
     }
 
     Map getJsonTerminologyExporterProperties(String connectionName = defaultConnectionName) {
-        listDataModelExporters(connectionName).find { imp -> imp.name == 'JsonExporterService' }
+        listTerminologyExporters(connectionName).find { imp -> imp.name == 'TerminologyJsonExporterService' }
     }
 
     Map exportDataModel(UUID dataModelId, String exporterNamespace, String exporterName, String exporterVersion,
@@ -296,26 +344,30 @@ class MauroDataMapperClient implements Closeable {
 
     Map exportTerminology(UUID terminologyId, String connectionName = defaultConnectionName) {
         Map exporterProperties = getJsonTerminologyExporterProperties(connectionName)
+
         exportTerminology(terminologyId,
                           exporterProperties.namespace as String,
                           exporterProperties.name as String,
                           exporterProperties.version as String,
-                          connectionName).dataModel as Map
+                          connectionName).terminology as Map
     }
 
     Map importDataModel(String importerNamespace, String importerName, String importerVersion,
                         DataModelImporterProviderServiceParameters parameters,
                         String connectionName = defaultConnectionName) {
 
+        def domain = JsonViewRenderer.instance.renderDomain(parameters)
+
+
         HttpResponse<Map> response = getConnection(connectionName).POST(
             MauroDataMapperEndpoint.DATAMODEL_IMPORT.build(importerNamespace: importerNamespace,
                                                            importerName: importerName,
                                                            importerVersion: importerVersion),
-            JsonViewRenderer.instance.renderDomain(parameters),
+            domain,
             Argument.of(Map)
         )
         if (response.status() != HttpStatus.CREATED) {
-            throw new ApiClientException('CXX', 'Could not import DataModel', MauroDataMapperEndpoint.DATAMODEL_IMPORT.representation,
+            throw new ApiClientException('CXX', 'Could not import DataModel ', MauroDataMapperEndpoint.DATAMODEL_IMPORT.representation,
                                          HttpStatus.CREATED, response)
         }
         response.body()
@@ -364,15 +416,14 @@ class MauroDataMapperClient implements Closeable {
         Utils.toUuid(id)
     }
 
-    UUID importTerminology(Terminology terminology, UUID folderId, String terminologyName, Boolean
-        finalised, Boolean importAsNewDocumentationVersion, String connectionName = defaultConnectionName) {
+    UUID importTerminology(Terminology terminology, UUID folderId, String terminologyName, Boolean finalised,
+                           Boolean importAsNewDocumentationVersion, String connectionName = defaultConnectionName) {
 
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
                                                         terminologyJsonExporterService.exportTerminology(
                                                             getConnection(connectionName).clientUser,
                                                             terminology
                                                         ).toByteArray())
-
         TerminologyFileImporterProviderServiceParameters parameters = new TerminologyFileImporterProviderServiceParameters(
             folderId: folderId,
             modelName: terminologyName,
@@ -381,12 +432,12 @@ class MauroDataMapperClient implements Closeable {
             importFile: fileParameter
         )
         Map importerProperties = getJsonTerminologyImporterProperties(connectionName)
-        String id = importTerminology(
-            importerProperties.namespace as String,
-            importerProperties.name as String,
-            importerProperties.version as String,
-            parameters, connectionName).id
-        Utils.toUuid(id)
+        def result = importTerminology(
+                importerProperties.namespace as String,
+                importerProperties.name as String,
+                importerProperties.version as String,
+                parameters, connectionName)
+        Utils.toUuid(((Map)((List)result.items)[0]).id.toString())
     }
 
     UUID findDataModelIdByName(String name, String connectionName = defaultConnectionName) {
@@ -395,7 +446,9 @@ class MauroDataMapperClient implements Closeable {
         ).body().items.find { Map m ->
             isLabelMatch(m.label as String, name)
         } as Map
-        Utils.toUuid(dataModel.id as String)
+        if(dataModel) {
+            return Utils.toUuid(dataModel.id as String)
+        } else return null
     }
 
     UUID findTerminologyIdByName(String name, String connectionName = defaultConnectionName) {
@@ -404,7 +457,9 @@ class MauroDataMapperClient implements Closeable {
         ).body().items.find { Map m ->
             isLabelMatch(m.label as String, name)
         } as Map
-        Utils.toUuid(terminology.id as String)
+        if(terminology) {
+            return Utils.toUuid(terminology.id as String)
+        } else return null
     }
 
     UUID findFolderByName(String name, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
@@ -413,7 +468,9 @@ class MauroDataMapperClient implements Closeable {
         Map folder = getConnection(connectionName).GET(endpoint).body().items.find { Map m ->
             isLabelMatch(m.label as String, name)
         } as Map
-        Utils.toUuid(folder.id as String)
+        if(folder) {
+            return Utils.toUuid(folder.id as String)
+        } else return null
     }
 
     Map getFolderById(UUID folderId, String connectionName = defaultConnectionName) {
@@ -483,7 +540,9 @@ class MauroDataMapperClient implements Closeable {
 
     UUID findOrCreateFolderByName(String name, UUID parentFolder = null, String connectionName = defaultConnectionName) {
         UUID folderId = findFolderByName(name, parentFolder, connectionName)
-        if (folderId) return folderId
+        if (folderId) {
+            return folderId
+        }
         createFolder(name.trim(), parentFolder, connectionName)
     }
 
