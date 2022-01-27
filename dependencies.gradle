@@ -1,35 +1,36 @@
 dependencies {
 
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-common:4.11.0'
-  compile 'uk.ac.ox.softeng.maurodatamapper:mdm-core:4.11.0'
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:4.11.0'
-  api 'uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:4.11.0'
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-common:${mdmCoreVersion}"
+    implementation "uk.ac.ox.softeng.maurodatamapper:mdm-core:${mdmCoreVersion}"
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:${mdmCoreVersion}"
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:${mdmCoreVersion}"
 
-    compile "org.grails.plugins:gsp"
-    compile "org.grails.plugins:views-json"
+    implementation "org.grails.plugins:gsp"
+    implementation "org.grails.plugins:views-json"
 
-  api group: 'org.codehaus.groovy', name: 'groovy'
+    api group: 'org.codehaus.groovy', name: 'groovy'
 
-  // Logging
-  compile group: 'org.slf4j', name: 'slf4j-api'
-  api group: 'ch.qos.logback', name: 'logback-classic'
+    // Logging
+    implementation group: 'org.slf4j', name: 'slf4j-api'
+    api group: 'ch.qos.logback', name: 'logback-classic'
 
-  api group: 'org.grails', name: 'grails-web-databinding'
-  api group: 'io.micronaut', name: 'micronaut-http-client'
+    api group: 'org.grails', name: 'grails-web-databinding'
+    implementation 'jakarta.annotation:jakarta.annotation-api'
+    implementation "io.micronaut:micronaut-inject-groovy"
+    api group: 'io.micronaut', name: 'micronaut-http-client'
 
-  api group: 'org.grails', name: 'grails-gorm-testing-support'
-  api "io.methvin:directory-watcher", {
-      exclude group: 'com.google.guava', module: 'guava'
-  }
+    api group: 'org.grails', name: 'grails-gorm-testing-support'
+    api "io.methvin:directory-watcher", {
+        exclude group: 'com.google.guava', module: 'guava'
+    }
 
-  compile group: 'org.flywaydb', name: 'flyway-core'
-  api "org.hibernate:hibernate-jcache"
-  api group: 'org.ehcache', name: 'ehcache'
-  api group: 'org.postgresql', name: 'postgresql'
+    implementation group: 'org.flywaydb', name: 'flyway-core'
+    api "org.hibernate:hibernate-jcache"
+    api group: 'org.ehcache', name: 'ehcache'
+    api group: 'org.postgresql', name: 'postgresql'
 
-  compile group: 'commons-io', name: 'commons-io', version: '2.6'
-  compile 'info.picocli:picocli:4.6.1'
-
+    runtimeOnly group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation 'info.picocli:picocli:4.6.2'
 
 
 }

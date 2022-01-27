@@ -17,9 +17,11 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
+import uk.ac.ox.softeng.maurodatamapper.path.Path
 import uk.ac.ox.softeng.maurodatamapper.security.User
 
 import groovy.transform.CompileStatic
+import org.apache.commons.lang3.NotImplementedException
 
 @CompileStatic
 class ClientUser implements User {
@@ -52,5 +54,9 @@ class ClientUser implements User {
 
     UUID setId(String id) {
         this.id = UUID.fromString(id)
+    }
+
+    Path getPath() {
+        throw new NotImplementedException('getPath')
     }
 }

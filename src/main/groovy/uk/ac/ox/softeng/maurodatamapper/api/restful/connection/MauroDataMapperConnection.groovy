@@ -32,7 +32,7 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MutableHttpRequest
-import io.micronaut.http.client.DefaultHttpClient
+import io.micronaut.http.client.netty.DefaultHttpClient
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -69,7 +69,7 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
 
     void setClient(String baseUrl) {
         this.baseUrl = baseUrl + "/api/"
-        this.client = new DefaultHttpClient(new URL(this.baseUrl),
+        this.client = new DefaultHttpClient(new URI(this.baseUrl),
                                             new DefaultHttpClientConfiguration().with {
                                                 setReadTimeout(Duration.ofMinutes(30))
                                                 setReadIdleTimeout(Duration.ofMinutes(30))
