@@ -101,6 +101,7 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         dataModelJsonImporterService.dataModelService.dataClassService = new DataClassService()
         dataModelJsonImporterService.dataModelService.dataClassService.dataElementService = new DataElementService()
         dataModelJsonImporterService.dataModelService.dataTypeService = new DataTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.dataClassService = new DataClassService()
 
         new DataTestSetupSpecInterceptor().configureDataTest(this)
         SimpleMapDatastore simpleDatastore = this.applicationContext.getBean(SimpleMapDatastore)

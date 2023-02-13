@@ -154,7 +154,7 @@ class MauroDataMapperClient implements Closeable {
 
     void deleteDataModel(UUID dataModelId, boolean permanent = true, String connectionName = defaultConnectionName) {
         getConnection(connectionName).DELETE(
-            MauroDataMapperEndpoint.DATAMODEL_DELETE.build(id: dataModelId, permanent: permanent)
+                MauroDataMapperEndpoint.DATAMODEL_DELETE.build(dataModelId: dataModelId.toString(), permanent: permanent)
         )
     }
 
@@ -189,7 +189,8 @@ class MauroDataMapperClient implements Closeable {
     UUID createFolder(Map folderMap, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
         String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_FOLDER_CREATE.build(folderId: parentFolderId) :
                           MauroDataMapperEndpoint.FOLDER_CREATE.build()
-        String id = getConnection(connectionName).POST(endpoint, folderMap).body().id
+        def body = getConnection(connectionName).POST(endpoint, folderMap).body()
+        String id = body.id
         Utils.toUuid(id)
     }
 
@@ -423,11 +424,13 @@ class MauroDataMapperClient implements Closeable {
             importFile: fileParameter
         )
         Map importerProperties = getJsonDataModelImporterProperties(connectionName)
-        String id = importDataModel(
-            importerProperties.namespace as String,
-            importerProperties.name as String,
-            importerProperties.version as String,
-            parameters, connectionName).id
+        Map response = importDataModel(
+                importerProperties.namespace as String,
+                importerProperties.name as String,
+                importerProperties.version as String,
+                parameters, connectionName)
+        def importedModel = ((List) response.items)[0]
+        String id = importedModel["id"]
         Utils.toUuid(id)
     }
 
