@@ -28,8 +28,8 @@ class MdmConnectionOptions extends BasicCommandOptions {
 
 
     @CommandLine.Option(
-            names = [ "-U", "--clientBaseUrl", "--client.baseUrl" ],
-            description = [ "The base URL of the catalogue api.",
+            names = [ "-U", "--url", "--client.baseUrl" ],
+            description = [ "The base URL of the Mauro API.",
                 "For example: 'http://www.example.com/metadata-catalogue/",
                 "Any trailing '/api' will be added" ],
             required = true
@@ -37,8 +37,8 @@ class MdmConnectionOptions extends BasicCommandOptions {
     URL clientBaseUrl
 
     @CommandLine.Option(
-            names = [ "-u", "--clientUsername", "--client.username" ],
-            description = [ "The username for logging into the metadata catalogue instance."]
+            names = [ "-u", "--username", "--client.username" ],
+            description = [ "The username for logging into the Mauro instance."]
     )
     String clientUsername
 
@@ -51,14 +51,14 @@ class MdmConnectionOptions extends BasicCommandOptions {
     char[] clientPassword
 
     @CommandLine.Option(
-        names = [ "-a", "--clientApiKey", "--client.apiKey" ],
-        description = [ "The API Key for logging into the metadata catalogue instance."]
+            names = [ "-a", "--api-key", "--client.apiKey" ],
+            description = [ "The API Key for logging into the Mauro instance."]
     )
     String clientApiKey
 
 
 
-    BindingMauroDataMapperClient getMauroDataMapperClient() {
+    BindingMauroDataMapperClient getBindingMauroDataMapperClient() {
         if(clientUsername && clientPassword) {
             return new BindingMauroDataMapperClient(clientBaseUrl.toString(), clientUsername, new String(clientPassword))
         } else if (clientApiKey) {
@@ -69,6 +69,4 @@ class MdmConnectionOptions extends BasicCommandOptions {
             return null
         }
     }
-
-
 }

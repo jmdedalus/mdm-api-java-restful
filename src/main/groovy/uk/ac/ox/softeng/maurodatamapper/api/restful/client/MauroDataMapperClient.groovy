@@ -84,6 +84,13 @@ class MauroDataMapperClient implements Closeable {
         openConnection(connectionName, baseUrl, apiKey)
         initialiseServices()
     }
+    // Local only client
+    MauroDataMapperClient(String connectionName = DEFAULT_CONNECTION_NAME) {
+        defaultConnectionName = connectionName
+        openLocalConnection(connectionName)
+        initialiseServices()
+    }
+
 
     void initialiseServices() {
         JsonViewRenderer.instance.initialise()
@@ -121,6 +128,11 @@ class MauroDataMapperClient implements Closeable {
         NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(properties.getProperty("client.baseUrl"), properties.getProperty("client.username"),
                                                                 properties.getProperty("client.password"))
     }
+
+    void openLocalConnection(String name) {
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection()
+    }
+
 
 
     void closeConnection(String name) {
@@ -391,19 +403,22 @@ class MauroDataMapperClient implements Closeable {
         response.body()
     }
 
-    UUID importDataModel(DataModel dataModel, UUID folderId, String dataModelName, Boolean finalised, Boolean importAsNewDocumentationVersion,
+    UUID importDataModel(DataModel dataModel, UUID folderId, String dataModelName, Boolean finalised, Boolean importAsNewBranchModelVersion,
+                         Boolean importAsNewDocumentationVersion,
                          String connectionName = defaultConnectionName) {
 
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
                                                         dataModelJsonExporterService.exportDataModel(
                                                             getConnection(connectionName).clientUser,
-                                                            dataModel
+                                                            dataModel,
+                                                            [:]
                                                         ).toByteArray())
 
         DataModelFileImporterProviderServiceParameters parameters = new DataModelFileImporterProviderServiceParameters(
             folderId: folderId,
             modelName: dataModelName,
             finalised: finalised,
+            importAsNewBranchModelVersion: importAsNewBranchModelVersion,
             importAsNewDocumentationVersion: importAsNewDocumentationVersion,
             importFile: fileParameter
         )
@@ -422,7 +437,8 @@ class MauroDataMapperClient implements Closeable {
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
                                                         terminologyJsonExporterService.exportTerminology(
                                                             getConnection(connectionName).clientUser,
-                                                            terminology
+                                                            terminology,
+                                                            [:]
                                                         ).toByteArray())
         TerminologyFileImporterProviderServiceParameters parameters = new TerminologyFileImporterProviderServiceParameters(
             folderId: folderId,

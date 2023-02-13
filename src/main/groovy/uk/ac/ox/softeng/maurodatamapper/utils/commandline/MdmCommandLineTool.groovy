@@ -25,8 +25,11 @@ abstract class MdmCommandLineTool<T extends BasicCommandOptions> {
     T options
 
     MdmCommandLineTool(String[] args, Class<T> clazz) {
-        options = clazz.newInstance()
+        options = clazz.getDeclaredConstructor().newInstance()
         CommandLineHelper commandLineHelper = new CommandLineHelper(options)
+        println 'args = ' + args
+        println 'options = ' + options
+        println 'options.clientBaseUrl = ' + options.clientBaseUrl
         commandLineHelper.parseArgs(args)
         if(options.debug) {
             System.out.println("Command Line options: ${options.getClass().getName()}")
@@ -34,8 +37,6 @@ abstract class MdmCommandLineTool<T extends BasicCommandOptions> {
                 System.out.println("  ${it.name} : ${options."$it.name"}")
             }
         }
-
-
     }
 
     MdmCommandLineTool(T options) {

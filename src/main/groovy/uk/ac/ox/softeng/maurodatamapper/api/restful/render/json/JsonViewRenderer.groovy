@@ -99,6 +99,12 @@ class JsonViewRenderer {
         render(arguments)
     }
 
+    String exportDomain(domain, Map arguments) {
+        arguments.model = getExportModel(domain)
+        render(arguments)
+    }
+
+
     /**
      * Render a template for the given source
      *
@@ -156,6 +162,13 @@ class JsonViewRenderer {
     static Map getRenderModel(domain) {
         Map<String, Object> map = [pageView: true,] as Map<String, Object>
         map.put("${domain.class.simpleName.uncapitalize()}".toString(), domain)
+        map
+    }
+
+    @SuppressWarnings('GroovyAssignabilityCheck')
+    static Map getExportModel(domain) {
+        Map<String, Object> map = [pageView: true,] as Map<String, Object>
+        map.put('export', domain)
         map
     }
 

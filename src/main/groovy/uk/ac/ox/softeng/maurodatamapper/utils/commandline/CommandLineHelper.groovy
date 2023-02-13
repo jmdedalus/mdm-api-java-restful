@@ -21,8 +21,11 @@ import picocli.CommandLine
 
 class CommandLineHelper extends CommandLine {
 
+    BasicCommandOptions options
+
     CommandLineHelper(BasicCommandOptions command) {
         super(command)
+        options = command
     }
 
     @Override
@@ -32,27 +35,26 @@ class CommandLineHelper extends CommandLine {
             System.exit(this.getCommandSpec().exitCodeOnUsageHelp())
         }
         BasicCommandOptions basicCommandOptions = new BasicCommandOptions()
-        //CatalogueCommandOptions fullOptions = new CatalogueConnectionOptions()
+        CommandLine basicCommandLine = new CommandLine(basicCommandOptions)
+        basicCommandLine.setUnmatchedArgumentsAllowed(true)
+        basicCommandLine.setOverwrittenOptionsAllowed(true)
+        basicCommandLine.getCommandSpec().parser().collectErrors(true)
+        basicCommandLine.parseArgs(args)
 
-        CommandLine commandLine = new CommandLine(basicCommandOptions)
-        commandLine.setUnmatchedArgumentsAllowed(true)
-        commandLine.setOverwrittenOptionsAllowed(true)
-        commandLine.getCommandSpec().parser().collectErrors(true)
-        ParseResult parseResult = commandLine.parseArgs(args)
-
-        if(basicCommandOptions.usageHelpRequested) {
+        String[] updatedArgs
+        if (basicCommandOptions.usageHelpRequested) {
             this.usage(System.out)
             System.exit(this.getCommandSpec().exitCodeOnUsageHelp())
         }
-        if(basicCommandOptions.propertyFiles) {
-            List<String> updatedArgs = []
-            updatedArgs.addAll(args)
+        if (basicCommandOptions.propertyFiles) {
+            List<String> updatedArgList = []
+            updatedArgList.addAll(args)
             basicCommandOptions.propertyFiles.each { propertyFile ->
                 try {
                     InputStream input = new FileInputStream(propertyFile)
                     Properties properties = new Properties()
                     properties.load(input)
-                    updatedArgs.addAll(properties.collect{ key, value ->
+                    updatedArgList.addAll(properties.collect{ key, value ->
                         """--${key}=${value}""".toString()
                     })
                 } catch (Exception e) {
@@ -66,14 +68,17 @@ class CommandLineHelper extends CommandLine {
 
                 }
             }
-            String[] stringArray = Arrays.copyOf(updatedArgs.toArray(), updatedArgs.size(), String[].class)
-
-            //CommandLine fullCommandLine = new CommandLine(fullOptions)
-            this.setUnmatchedArgumentsAllowed(true)
-            this.setOverwrittenOptionsAllowed(true)
-            this.getCommandSpec().parser().collectErrors(true)
-            parseResult = super.parseArgs(stringArray)
+            updatedArgs = Arrays.copyOf(updatedArgList.toArray(), updatedArgList.size(), String[].class)
+        } else {
+            updatedArgs = args
         }
+
+        this.setUnmatchedArgumentsAllowed(true)
+        this.setOverwrittenOptionsAllowed(true)
+        this.getCommandSpec().parser().collectErrors(true)
+        println 'updatedArgs = ' + updatedArgs
+        println 'CommandLine::parseArgs'
+        super.parseArgs(updatedArgs)
 
         List<Exception> exceptions = parseResult.errors()
         if (exceptions) {

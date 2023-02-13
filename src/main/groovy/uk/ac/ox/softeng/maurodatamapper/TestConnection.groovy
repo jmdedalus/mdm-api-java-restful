@@ -17,9 +17,11 @@
  */
 package uk.ac.ox.softeng.maurodatamapper
 
+import groovy.util.logging.Slf4j
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.BindingMauroDataMapperClient
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
 
+@Slf4j
 class TestConnection {
 
     static void main(String[] args) {

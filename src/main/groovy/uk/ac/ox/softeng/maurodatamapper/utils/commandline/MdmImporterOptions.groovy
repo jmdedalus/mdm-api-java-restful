@@ -20,7 +20,7 @@ package uk.ac.ox.softeng.maurodatamapper.utils.commandline;
 import picocli.CommandLine;
 
 @CommandLine.Command
-public class MdmImporterOptions extends MdmConnectionOptions {
+class MdmImporterOptions extends MdmConnectionOptions {
 
     @CommandLine.Option(
             names = [ "-t", "--testOnly", "--csv.testOnly" ],

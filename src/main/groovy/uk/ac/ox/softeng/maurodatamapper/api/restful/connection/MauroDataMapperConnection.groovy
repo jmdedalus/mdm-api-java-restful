@@ -67,6 +67,13 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         getUserDetails()
     }
 
+    // Local only
+    MauroDataMapperConnection() {
+        getUserDetails()
+    }
+
+
+
     void setClient(String baseUrl) {
         this.baseUrl = baseUrl + "/api/"
         this.client = new DefaultHttpClient(new URI(this.baseUrl),
@@ -84,7 +91,7 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         if(!apiKey) {
             logout()
         }
-        client.close()
+        if (client) client.close()
     }
 
     // When we've got an api key, go and find the current user's details
@@ -92,6 +99,7 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         clientUser = new ClientUser()
         clientUser.firstName = "Anonymous"
         clientUser.lastName = "User"
+        clientUser.emailAddress = "anonymous.user@example.com"
     }
 
     @CompileDynamic
