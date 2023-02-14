@@ -37,10 +37,15 @@ import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataElementService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.EnumerationType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.EnumerationTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ModelDataType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ModelDataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ReferenceType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ReferenceTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.enumeration.EnumerationValue
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.enumeration.EnumerationValueService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.DataModelJsonImporterService
 import uk.ac.ox.softeng.maurodatamapper.terminology.CodeSet
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
@@ -102,6 +107,12 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         dataModelJsonImporterService.dataModelService.dataClassService.dataElementService = new DataElementService()
         dataModelJsonImporterService.dataModelService.dataTypeService = new DataTypeService()
         dataModelJsonImporterService.dataModelService.dataTypeService.dataClassService = new DataClassService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.enumerationTypeService = new EnumerationTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.enumerationTypeService.enumerationValueService = new EnumerationValueService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.primitiveTypeService = new PrimitiveTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.referenceTypeService = new ReferenceTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.modelDataTypeService = new ModelDataTypeService()
+
 
         new DataTestSetupSpecInterceptor().configureDataTest(this)
         SimpleMapDatastore simpleDatastore = this.applicationContext.getBean(SimpleMapDatastore)
