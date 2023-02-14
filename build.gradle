@@ -14,12 +14,22 @@ buildscript {
     }
 }
 
+
+
 plugins {
     id 'groovy'
     id 'java-library'
 }
 
 apply plugin: 'uk.ac.ox.softeng.maurodatamapper.gradle.mdm-gradle'
+
+codenarcMain {
+    compilationClasspath = sourceSets.main.compileClasspath + sourceSets.main.output
+}
+
+codenarcTest {
+    compilationClasspath = codenarcMain.compilationClasspath + sourceSets.test.compileClasspath + sourceSets.test.output
+}
 
 afterEvaluate {
 
