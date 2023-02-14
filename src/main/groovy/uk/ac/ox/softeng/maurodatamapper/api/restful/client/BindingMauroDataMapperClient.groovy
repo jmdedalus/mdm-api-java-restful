@@ -49,9 +49,14 @@ import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.enumeration.Enum
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.DataModelJsonImporterService
 import uk.ac.ox.softeng.maurodatamapper.terminology.CodeSet
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
+import uk.ac.ox.softeng.maurodatamapper.terminology.TerminologyService
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.Term
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermRelationshipType
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermRelationshipTypeService
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermService
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.term.TermRelationship
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.term.TermRelationshipService
+import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.TerminologyJsonImporterService
 import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
 import grails.testing.gorm.DataTest
@@ -66,6 +71,8 @@ import org.grails.testing.gorm.spock.DataTestSetupSpecInterceptor
 class BindingMauroDataMapperClient extends MauroDataMapperClient implements DataBinder, DataTest {
 
     DataModelJsonImporterService dataModelJsonImporterService
+
+    TerminologyJsonImporterService terminologyJsonImporterService
 
     BindingMauroDataMapperClient(Properties properties) {
         super(properties)
@@ -113,6 +120,11 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         dataModelJsonImporterService.dataModelService.dataTypeService.referenceTypeService = new ReferenceTypeService()
         dataModelJsonImporterService.dataModelService.dataTypeService.modelDataTypeService = new ModelDataTypeService()
 
+        terminologyJsonImporterService = new TerminologyJsonImporterService()
+        terminologyJsonImporterService.terminologyService = new TerminologyService()
+        terminologyJsonImporterService.terminologyService.termService = new TermService()
+        terminologyJsonImporterService.terminologyService.termRelationshipService = new TermRelationshipService()
+        terminologyJsonImporterService.terminologyService.termRelationshipTypeService = new TermRelationshipTypeService()
 
         new DataTestSetupSpecInterceptor().configureDataTest(this)
         SimpleMapDatastore simpleDatastore = this.applicationContext.getBean(SimpleMapDatastore)
@@ -153,6 +165,18 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         UUID dataModelId = findDataModelIdByName(name, connectionName)
         if (!dataModelId) return null
         exportAndBindDataModelById(dataModelId, connectionName)
+    }
+
+    Terminology exportAndBindTerminologyById(UUID id, String connectionName = defaultConnectionName) {
+        Map exportModel = exportTerminology(id, connectionName)
+        terminologyJsonImporterService.bindMapToTerminology(getConnection(connectionName).clientUser, exportModel)
+    }
+
+
+    Terminology findAndExportAndBindTerminologyByName(String name, String connectionName = defaultConnectionName) {
+        UUID terminologyId = findTerminologyIdByName(name, connectionName)
+        if (!terminologyId) return null
+        exportAndBindTerminologyById(terminologyId, connectionName)
     }
 
     List<SummaryMetadata> listAndBindSummaryMetadata(CatalogueItemPrefix catalogueItemPrefix, UUID catalogueItemId,

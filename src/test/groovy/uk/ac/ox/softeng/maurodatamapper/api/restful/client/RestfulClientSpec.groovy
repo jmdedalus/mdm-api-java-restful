@@ -19,6 +19,7 @@ package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
 import spock.lang.Specification
 import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
+import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
 
 class RestfulClientSpec extends Specification {
 
@@ -45,8 +46,34 @@ class RestfulClientSpec extends Specification {
         dm.childDataClasses.size() == 3
         dm.dataClasses.size() == 4
 
+    }
+
+    void 'Test retrieving a terminology' () {
+        when: "Download and bind a terminology"
+        Terminology terminology
+        getClient().withCloseable {client ->
+            terminology = client.findAndExportAndBindTerminologyByName("Complex Test Terminology")
+        }
+        then: "the terminology is present and correct"
+        terminology != null
+        terminology.terms.size() == 102
+        terminology.termRelationshipTypes.size() == 4
+    }
+
+    void 'Test getting folder by name' () {
+        when: "Find a folder by name"
+        UUID folderId
+        List<UUID> dataModelIds
+        getClient().withCloseable {client ->
+            folderId = client.findFolderByName("SDK Testing")
+            dataModelIds = client.listDataModelsInFolder(folderId)
+        }
+        then:
+        folderId.toString() == '2f6d030f-e4e0-408c-a2e8-6989cf6af9a4'
+        dataModelIds.size() == 1
 
     }
+
 
 
 }
