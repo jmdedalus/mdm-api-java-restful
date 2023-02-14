@@ -62,7 +62,7 @@ pipeline {
                     junit allowEmptyResults: true, testResults: 'build/test-results/test/*.xml'
                 }
             }
-//        }
+        }
 //
 //        stage('Integration Test') {
 //
@@ -93,25 +93,25 @@ pipeline {
             }
         }
 
-//        stage('Deploy to Artifactory') {
-//            when {
-//                allOf {
-//                    anyOf {
-//                        branch 'main'
-//                        branch 'develop'
-//                    }
-//                    expression {
-//                        currentBuild.currentResult == 'SUCCESS'
-//                    }
-//                }
-//
-//            }
-//            steps {
-//                script {
-//                    sh "./gradlew publish"
-//                }
-//            }
-//        }
+        stage('Deploy to Artifactory') {
+            when {
+                allOf {
+                    anyOf {
+                        branch 'main'
+                        branch 'develop'
+                    }
+                    expression {
+                        currentBuild.currentResult == 'SUCCESS'
+                    }
+                }
+
+            }
+            steps {
+                script {
+                    sh "./gradlew publish"
+                }
+            }
+        }
     }
 
     post {
