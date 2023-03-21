@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,13 @@ class MauroDataMapperClient implements Closeable {
         openConnection(connectionName, baseUrl, apiKey)
         initialiseServices()
     }
+    // Local only client
+    MauroDataMapperClient(String connectionName = DEFAULT_CONNECTION_NAME) {
+        defaultConnectionName = connectionName
+        openLocalConnection(connectionName)
+        initialiseServices()
+    }
+
 
     void initialiseServices() {
         JsonViewRenderer.instance.initialise()
@@ -122,6 +129,11 @@ class MauroDataMapperClient implements Closeable {
                                                                 properties.getProperty("client.password"))
     }
 
+    void openLocalConnection(String name) {
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection()
+    }
+
+
 
     void closeConnection(String name) {
         NAMED_CONNECTIONS.remove(name)?.close()
@@ -142,7 +154,7 @@ class MauroDataMapperClient implements Closeable {
 
     void deleteDataModel(UUID dataModelId, boolean permanent = true, String connectionName = defaultConnectionName) {
         getConnection(connectionName).DELETE(
-            MauroDataMapperEndpoint.DATAMODEL_DELETE.build(id: dataModelId, permanent: permanent)
+                MauroDataMapperEndpoint.DATAMODEL_DELETE.build(dataModelId: dataModelId.toString(), permanent: permanent)
         )
     }
 
@@ -177,7 +189,8 @@ class MauroDataMapperClient implements Closeable {
     UUID createFolder(Map folderMap, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
         String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_FOLDER_CREATE.build(folderId: parentFolderId) :
                           MauroDataMapperEndpoint.FOLDER_CREATE.build()
-        String id = getConnection(connectionName).POST(endpoint, folderMap).body().id
+        def body = getConnection(connectionName).POST(endpoint, folderMap).body()
+        String id = body.id
         Utils.toUuid(id)
     }
 
@@ -391,28 +404,33 @@ class MauroDataMapperClient implements Closeable {
         response.body()
     }
 
-    UUID importDataModel(DataModel dataModel, UUID folderId, String dataModelName, Boolean finalised, Boolean importAsNewDocumentationVersion,
+    UUID importDataModel(DataModel dataModel, UUID folderId, String dataModelName, Boolean finalised, Boolean importAsNewBranchModelVersion,
+                         Boolean importAsNewDocumentationVersion,
                          String connectionName = defaultConnectionName) {
 
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
                                                         dataModelJsonExporterService.exportDataModel(
                                                             getConnection(connectionName).clientUser,
-                                                            dataModel
+                                                            dataModel,
+                                                            [:]
                                                         ).toByteArray())
 
         DataModelFileImporterProviderServiceParameters parameters = new DataModelFileImporterProviderServiceParameters(
             folderId: folderId,
             modelName: dataModelName,
             finalised: finalised,
+            importAsNewBranchModelVersion: importAsNewBranchModelVersion,
             importAsNewDocumentationVersion: importAsNewDocumentationVersion,
             importFile: fileParameter
         )
         Map importerProperties = getJsonDataModelImporterProperties(connectionName)
-        String id = importDataModel(
-            importerProperties.namespace as String,
-            importerProperties.name as String,
-            importerProperties.version as String,
-            parameters, connectionName).id
+        Map response = importDataModel(
+                importerProperties.namespace as String,
+                importerProperties.name as String,
+                importerProperties.version as String,
+                parameters, connectionName)
+        def importedModel = ((List) response.items)[0]
+        String id = importedModel["id"]
         Utils.toUuid(id)
     }
 
@@ -422,7 +440,8 @@ class MauroDataMapperClient implements Closeable {
         FileParameter fileParameter = new FileParameter("temporaryFile", "",
                                                         terminologyJsonExporterService.exportTerminology(
                                                             getConnection(connectionName).clientUser,
-                                                            terminology
+                                                            terminology,
+                                                            [:]
                                                         ).toByteArray())
         TerminologyFileImporterProviderServiceParameters parameters = new TerminologyFileImporterProviderServiceParameters(
             folderId: folderId,

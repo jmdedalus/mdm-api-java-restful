@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.client
 
+import uk.ac.ox.softeng.maurodatamapper.api.restful.render.json.JsonViewRenderer
+import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
+
+import grails.web.Controller
 
 import groovy.util.logging.Slf4j
 
@@ -24,13 +28,37 @@ import groovy.util.logging.Slf4j
 class TestClient {
 
     static void main(String[] args) throws Exception {
+        log.debug('Starting TestClient...')
         MauroDataMapperClient client
         try {
-            // client = new BindingMauroDataMapperClient('http://localhost:8080', 'james.welch@cs.ox.ac.uk', 'password')
-            client = new MauroDataMapperClient('https://modelcatalogue.cs.ox.ac.uk/continuous-deployment', UUID.fromString('9ce84cd6-f77d-45d2-a3bc-a8f5e7a8edb9'))
+            client = new BindingMauroDataMapperClient('http://localhost:8080', 'admin@maurodatamapper.com', 'password')
+            // client = new MauroDataMapperClient('https://modelcatalogue.cs.ox.ac.uk/continuous-deployment', UUID.fromString('a50befd8-6c4c-40e5-aef4-daf0494a4848'))
 
-            def terminology = client.exportTerminology(UUID.fromString('bc6011c6-0f35-4c2b-9ddb-346db891776b'))
-            System.err.println(terminology)
+            // localhost: 2d58e58b-ac23-484f-902a-12912a2e5343
+            // continuous deployment: 427d1243-4f89-46e8-8f8f-8424890b5083
+            def dataModel = client.exportAndBindDataModelById(UUID.fromString('2d58e58b-ac23-484f-902a-12912a2e5343'))
+
+            log.debug('Exported DataModel: {}', dataModel)
+
+            dataModel.save()
+
+            String dataModelJson = JsonViewRenderer.instance.renderDomain(dataModel)
+
+            log.debug('Rendered DataModel: {}', dataModelJson)
+
+            String dataModelExportJson = JsonViewRenderer.instance.exportDomain(dataModel, [template: '/dataModel/export'])
+
+            log.debug('Exported DataModel: {}', dataModelExportJson)
+
+            DataModel localDataModel = new DataModel(label: 'Test Client DataModel')
+
+            String localDataModelJson = JsonViewRenderer.instance.renderDomain(localDataModel)
+
+            log.debug('Local Rendered DataModel: {}', localDataModelJson)
+
+            String localDataModelExportJson = JsonViewRenderer.instance.exportDomain(localDataModel, [template: '/dataModel/export'])
+
+            log.debug('Local Exported DataModel: {}', localDataModelExportJson)
 
 
 

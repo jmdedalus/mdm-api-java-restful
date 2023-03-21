@@ -1,36 +1,47 @@
 dependencies {
 
-    api "uk.ac.ox.softeng.maurodatamapper:mdm-common:${mdmCoreVersion}"
-    implementation "uk.ac.ox.softeng.maurodatamapper:mdm-core:${mdmCoreVersion}"
-    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:${mdmCoreVersion}"
-    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:${mdmCoreVersion}"
+    api group: 'org.codehaus.groovy', name: 'groovy'
+
+    runtimeOnly "io.methvin:directory-watcher", {
+        exclude group: 'com.google.guava', module: 'guava'
+    }
+
+    // Postgres database
+    runtimeOnly group: 'org.flywaydb', name: 'flyway-core'
+    runtimeOnly "org.hibernate:hibernate-jcache"
+    runtimeOnly group: 'org.ehcache', name: 'ehcache'
+    runtimeOnly group: 'org.postgresql', name: 'postgresql'
+
+
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-common:${mdmCoreVersion}", {
+        exclude group: 'org.grails.plugins', module: 'views-json' // exclusions to use version 2.2.0 instead of 2.2.1
+    }
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-core:${mdmCoreVersion}", {
+        exclude group: 'org.grails.plugins', module: 'views-json'
+    }
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-datamodel:${mdmCoreVersion}", {
+        exclude group: 'org.grails.plugins', module: 'views-json'
+    }
+    api "uk.ac.ox.softeng.maurodatamapper:mdm-plugin-terminology:${mdmCoreVersion}", {
+        exclude group: 'org.grails.plugins', module: 'views-json'
+    }
 
     implementation "org.grails.plugins:gsp"
-    implementation "org.grails.plugins:views-json"
+    implementation "org.grails.plugins:views-json:${grailsViewsVersion}"
 
-    api group: 'org.codehaus.groovy', name: 'groovy'
 
     // Logging
     implementation group: 'org.slf4j', name: 'slf4j-api'
     api group: 'ch.qos.logback', name: 'logback-classic'
 
     api group: 'org.grails', name: 'grails-web-databinding'
-    implementation 'jakarta.annotation:jakarta.annotation-api'
-    implementation "io.micronaut:micronaut-inject-groovy"
+    implementation "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
+    implementation 'io.micronaut:micronaut-inject-groovy'
     api group: 'io.micronaut', name: 'micronaut-http-client'
 
     api group: 'org.grails', name: 'grails-gorm-testing-support'
-    api "io.methvin:directory-watcher", {
-        exclude group: 'com.google.guava', module: 'guava'
-    }
 
-    implementation group: 'org.flywaydb', name: 'flyway-core'
-    api "org.hibernate:hibernate-jcache"
-    api group: 'org.ehcache', name: 'ehcache'
-    api group: 'org.postgresql', name: 'postgresql'
-
-    runtimeOnly group: 'commons-io', name: 'commons-io', version: '2.6'
-    implementation 'info.picocli:picocli:4.6.2'
+    api "info.picocli:picocli:${picoCliVersion}"
 
 
 }

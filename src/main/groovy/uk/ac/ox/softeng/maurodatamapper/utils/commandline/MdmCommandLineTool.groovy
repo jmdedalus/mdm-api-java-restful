@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,11 @@ abstract class MdmCommandLineTool<T extends BasicCommandOptions> {
     T options
 
     MdmCommandLineTool(String[] args, Class<T> clazz) {
-        options = clazz.newInstance()
+        options = clazz.getDeclaredConstructor().newInstance()
         CommandLineHelper commandLineHelper = new CommandLineHelper(options)
+        println 'args = ' + args
+        println 'options = ' + options
+        println 'options.clientBaseUrl = ' + options.clientBaseUrl
         commandLineHelper.parseArgs(args)
         if(options.debug) {
             System.out.println("Command Line options: ${options.getClass().getName()}")
@@ -34,8 +37,6 @@ abstract class MdmCommandLineTool<T extends BasicCommandOptions> {
                 System.out.println("  ${it.name} : ${options."$it.name"}")
             }
         }
-
-
     }
 
     MdmCommandLineTool(T options) {

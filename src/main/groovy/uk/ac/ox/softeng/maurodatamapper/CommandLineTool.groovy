@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,23 @@
  */
 package uk.ac.ox.softeng.maurodatamapper
 
-import uk.ac.ox.softeng.maurodatamapper.utils.commandline.CommandLineHelper
+import uk.ac.ox.softeng.maurodatamapper.utils.commandline.MdmCommandLineTool
 import uk.ac.ox.softeng.maurodatamapper.utils.commandline.MdmConnectionOptions
+import groovy.util.logging.Slf4j
 
-class CommandLineUtility {
-
+@Slf4j
+class CommandLineTool extends MdmCommandLineTool<MdmConnectionOptions> {
     static void main(String[] args) {
-        String[] tempArgs = ["-v", "--baseUrl=http://localhost:8080", "--properties=...",
-                             "--properties=..."]
-
-        MdmConnectionOptions options = new MdmConnectionOptions()
-
-        CommandLineHelper commandLineHelper = new CommandLineHelper(options)
-        commandLineHelper.parseArgs(tempArgs)
-
-        System.err.println(options.clientBaseUrl)
-        System.err.println(options.clientPassword)
+        CommandLineTool commandLineTool = new CommandLineTool(args)
+        commandLineTool.run()
     }
 
+    CommandLineTool(String[] args) {
+        super(args, MdmConnectionOptions)
+    }
 
+    void run() {
+        log.debug('CommandLineTool::run')
+        log.debug('options.clientBaseUrl = {}', options.clientBaseUrl)
+    }
 }

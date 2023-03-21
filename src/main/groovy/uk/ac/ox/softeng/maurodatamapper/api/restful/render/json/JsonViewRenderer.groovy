@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,12 @@ class JsonViewRenderer {
         render(arguments)
     }
 
+    String exportDomain(domain, Map arguments) {
+        arguments.model = getExportModel(domain)
+        render(arguments)
+    }
+
+
     /**
      * Render a template for the given source
      *
@@ -156,6 +162,13 @@ class JsonViewRenderer {
     static Map getRenderModel(domain) {
         Map<String, Object> map = [pageView: true,] as Map<String, Object>
         map.put("${domain.class.simpleName.uncapitalize()}".toString(), domain)
+        map
+    }
+
+    @SuppressWarnings('GroovyAssignabilityCheck')
+    static Map getExportModel(domain) {
+        Map<String, Object> map = [pageView: true,] as Map<String, Object>
+        map.put('export', domain)
         map
     }
 

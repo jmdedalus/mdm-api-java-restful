@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 University of Oxford
+ * Copyright 2020-2023 University of Oxford and Health and Social Care Information Centre, also known as NHS Digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,22 +27,36 @@ import uk.ac.ox.softeng.maurodatamapper.core.facet.ReferenceFile
 import uk.ac.ox.softeng.maurodatamapper.core.facet.SemanticLink
 import uk.ac.ox.softeng.maurodatamapper.core.facet.VersionLink
 import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
+import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModelService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.facet.SummaryMetadata
 import uk.ac.ox.softeng.maurodatamapper.datamodel.facet.summarymetadata.SummaryMetadataReport
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataClass
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataClassService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataElement
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataElementService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.EnumerationType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.EnumerationTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ModelDataType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ModelDataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ReferenceType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.ReferenceTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.enumeration.EnumerationValue
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.enumeration.EnumerationValueService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.DataModelJsonImporterService
 import uk.ac.ox.softeng.maurodatamapper.terminology.CodeSet
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
+import uk.ac.ox.softeng.maurodatamapper.terminology.TerminologyService
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.Term
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermRelationshipType
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermRelationshipTypeService
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.TermService
 import uk.ac.ox.softeng.maurodatamapper.terminology.item.term.TermRelationship
+import uk.ac.ox.softeng.maurodatamapper.terminology.item.term.TermRelationshipService
+import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.TerminologyJsonImporterService
 import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
 import grails.testing.gorm.DataTest
@@ -57,6 +71,8 @@ import org.grails.testing.gorm.spock.DataTestSetupSpecInterceptor
 class BindingMauroDataMapperClient extends MauroDataMapperClient implements DataBinder, DataTest {
 
     DataModelJsonImporterService dataModelJsonImporterService
+
+    TerminologyJsonImporterService terminologyJsonImporterService
 
     BindingMauroDataMapperClient(Properties properties) {
         super(properties)
@@ -83,7 +99,33 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         initialise()
     }
 
+    // Local only client
+    BindingMauroDataMapperClient(String connectionName = DEFAULT_CONNECTION_NAME) {
+        super(connectionName)
+        initialise()
+    }
+
+
+
     void initialise() {
+        dataModelJsonImporterService = new DataModelJsonImporterService()
+        dataModelJsonImporterService.dataModelService = new DataModelService()
+        dataModelJsonImporterService.dataModelService.dataClassService = new DataClassService()
+        dataModelJsonImporterService.dataModelService.dataClassService.dataElementService = new DataElementService()
+        dataModelJsonImporterService.dataModelService.dataTypeService = new DataTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.dataClassService = new DataClassService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.enumerationTypeService = new EnumerationTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.enumerationTypeService.enumerationValueService = new EnumerationValueService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.primitiveTypeService = new PrimitiveTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.referenceTypeService = new ReferenceTypeService()
+        dataModelJsonImporterService.dataModelService.dataTypeService.modelDataTypeService = new ModelDataTypeService()
+
+        terminologyJsonImporterService = new TerminologyJsonImporterService()
+        terminologyJsonImporterService.terminologyService = new TerminologyService()
+        terminologyJsonImporterService.terminologyService.termService = new TermService()
+        terminologyJsonImporterService.terminologyService.termRelationshipService = new TermRelationshipService()
+        terminologyJsonImporterService.terminologyService.termRelationshipTypeService = new TermRelationshipTypeService()
+
         new DataTestSetupSpecInterceptor().configureDataTest(this)
         SimpleMapDatastore simpleDatastore = this.applicationContext.getBean(SimpleMapDatastore)
         this.currentSession = simpleDatastore.connect()
@@ -116,13 +158,25 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
 
     DataModel exportAndBindDataModelById(UUID id, String connectionName = defaultConnectionName) {
         Map exportModel = exportDataModel(id, connectionName)
-        dataModelJsonImporterService.bindMapToDataModel(getConnection(connectionName).clientUser, exportModel.dataModel as Map)
+        dataModelJsonImporterService.bindMapToDataModel(getConnection(connectionName).clientUser, exportModel)
     }
 
     DataModel findAndExportAndBindDataModelByName(String name, String connectionName = defaultConnectionName) {
         UUID dataModelId = findDataModelIdByName(name, connectionName)
         if (!dataModelId) return null
         exportAndBindDataModelById(dataModelId, connectionName)
+    }
+
+    Terminology exportAndBindTerminologyById(UUID id, String connectionName = defaultConnectionName) {
+        Map exportModel = exportTerminology(id, connectionName)
+        terminologyJsonImporterService.bindMapToTerminology(getConnection(connectionName).clientUser, exportModel)
+    }
+
+
+    Terminology findAndExportAndBindTerminologyByName(String name, String connectionName = defaultConnectionName) {
+        UUID terminologyId = findTerminologyIdByName(name, connectionName)
+        if (!terminologyId) return null
+        exportAndBindTerminologyById(terminologyId, connectionName)
     }
 
     List<SummaryMetadata> listAndBindSummaryMetadata(CatalogueItemPrefix catalogueItemPrefix, UUID catalogueItemId,
@@ -143,25 +197,27 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         } as List<Metadata>
     }
 
-    void copyDataModelToTarget(UUID dataModelId, String targetConnectionName, UUID targetFolderId, boolean importAsNewDocumentationVersion,
+    void copyDataModelToTarget(UUID dataModelId, String targetConnectionName, UUID targetFolderId, boolean importAsNewBranchModelVersion,
+                               boolean importAsNewDocumentationVersion,
                                String sourceConnectionName = defaultConnectionName) {
         DataModel dataModel = exportAndBindDataModelById(dataModelId, sourceConnectionName)
-        importDataModel(dataModel, targetFolderId, dataModel.label, dataModel.finalised, importAsNewDocumentationVersion, targetConnectionName)
+        importDataModel(dataModel, targetFolderId, dataModel.label, dataModel.finalised, importAsNewBranchModelVersion, importAsNewDocumentationVersion, targetConnectionName)
+
     }
 
-    void copyFolderToTarget(UUID folderId, String targetConnectionName, UUID targetParentFolderId = null, boolean importAsNewDocumentationVersion,
+    void copyFolderToTarget(UUID folderId, String targetConnectionName, UUID targetParentFolderId = null,boolean importAsNewBranchModelVersion,  boolean importAsNewDocumentationVersion,
                             String sourceConnectionName = defaultConnectionName) {
         Map sourceFolderMap = getFolderById(folderId, sourceConnectionName)
         UUID targetFolderId = createFolder(sourceFolderMap, targetParentFolderId, targetConnectionName)
 
         List<UUID> dataModelsInSourceFolder = listDataModelsInFolder(folderId, sourceConnectionName)
-        dataModelsInSourceFolder.each { sourceDataModelId ->
-            copyDataModelToTarget(sourceDataModelId, targetConnectionName, targetFolderId, importAsNewDocumentationVersion, sourceConnectionName)
+        dataModelsInSourceFolder.each {sourceDataModelId ->
+            copyDataModelToTarget(sourceDataModelId, targetConnectionName, targetFolderId, importAsNewBranchModelVersion, importAsNewDocumentationVersion, sourceConnectionName)
         }
 
         List<UUID> subFoldersInSourceFolder = listSubFoldersInFolder(folderId, sourceConnectionName)
-        subFoldersInSourceFolder.each { sourceSubFolderId ->
-            copyFolderToTarget(sourceSubFolderId, targetConnectionName, targetFolderId, importAsNewDocumentationVersion, sourceConnectionName)
+        subFoldersInSourceFolder.each {sourceSubFolderId ->
+            copyFolderToTarget(sourceSubFolderId, targetConnectionName, targetFolderId, importAsNewBranchModelVersion, importAsNewDocumentationVersion, sourceConnectionName)
         }
     }
 }
