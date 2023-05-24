@@ -56,14 +56,20 @@ class MdmConnectionOptions extends BasicCommandOptions {
     )
     String clientApiKey
 
+    @CommandLine.Option(
+            names = [ "-i", "--insecure", "--client.insecure" ],
+            description = [ "Allow insecure TLS connections (eg, self-signed certificates or mismatched hostnames)"],
+            defaultValue = "false"
+    )
+    Boolean clientInsecureTls
 
 
     BindingMauroDataMapperClient getBindingMauroDataMapperClient() {
         if(clientUsername && clientPassword) {
-            return new BindingMauroDataMapperClient(clientBaseUrl.toString(), clientUsername, new String(clientPassword))
+            return new BindingMauroDataMapperClient(clientBaseUrl.toString(), clientUsername, new String(clientPassword), clientInsecureTls)
         } else if (clientApiKey) {
             UUID clientApiKeyUUID = UUID.fromString(clientApiKey)
-            return new BindingMauroDataMapperClient(clientBaseUrl.toString(), clientApiKeyUUID)
+            return new BindingMauroDataMapperClient(clientBaseUrl.toString(), clientApiKeyUUID, clientInsecureTls)
         } else {
             log.error("username / password or apiKey must be set")
             return null

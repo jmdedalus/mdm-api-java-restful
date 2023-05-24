@@ -84,18 +84,18 @@ class BindingMauroDataMapperClient extends MauroDataMapperClient implements Data
         initialise()
     }
 
-    BindingMauroDataMapperClient(String baseUrl, String username, String password) {
-        super(baseUrl, username, password)
+    BindingMauroDataMapperClient(String baseUrl, String username, String password, Boolean insecureTls) {
+        super(baseUrl, username, password, insecureTls)
         initialise()
     }
 
-    BindingMauroDataMapperClient(String baseUrl, UUID apiKey) {
-        super(baseUrl, apiKey)
+    BindingMauroDataMapperClient(String baseUrl, UUID apiKey, Boolean insecureTls) {
+        super(baseUrl, apiKey, insecureTls)
         initialise()
     }
 
-    BindingMauroDataMapperClient(String connectionName, String baseUrl, String username, String password) {
-        super(connectionName, baseUrl, username, password)
+    BindingMauroDataMapperClient(String connectionName, String baseUrl, String username, String password, Boolean insecureTls) {
+        super(connectionName, baseUrl, username, password, insecureTls)
         initialise()
     }
 

@@ -60,28 +60,28 @@ class MauroDataMapperClient implements Closeable {
         this(DEFAULT_CONNECTION_NAME, properties)
     }
 
-    MauroDataMapperClient(String baseUrl, String username, String password) {
-        this(DEFAULT_CONNECTION_NAME, baseUrl, username, password)
+    MauroDataMapperClient(String baseUrl, String username, String password, Boolean insecureTls) {
+        this(DEFAULT_CONNECTION_NAME, baseUrl, username, password, insecureTls)
     }
 
-    MauroDataMapperClient(String baseUrl, UUID apiKey) {
-        this(DEFAULT_CONNECTION_NAME, baseUrl, apiKey)
+    MauroDataMapperClient(String baseUrl, UUID apiKey, Boolean insecureTls) {
+        this(DEFAULT_CONNECTION_NAME, baseUrl, apiKey, insecureTls)
     }
 
     MauroDataMapperClient(String connectionName, Properties properties) {
         this(connectionName, properties.getProperty("client.baseUrl"), properties.getProperty("client.username"),
-             properties.getProperty("client.password"))
+                properties.getProperty("client.password"), Boolean.parseBoolean(properties.getProperty("client.insecure", "false")))
     }
 
-    MauroDataMapperClient(String connectionName, String baseUrl, String username, String password) {
+    MauroDataMapperClient(String connectionName, String baseUrl, String username, String password, Boolean insecureTls) {
         defaultConnectionName = connectionName
-        openConnection(connectionName, baseUrl, username, password)
+        openConnection(connectionName, baseUrl, username, password, insecureTls)
         initialiseServices()
     }
 
-    MauroDataMapperClient(String connectionName, String baseUrl, UUID apiKey) {
+    MauroDataMapperClient(String connectionName, String baseUrl, UUID apiKey, Boolean insecureTls) {
         defaultConnectionName = connectionName
-        openConnection(connectionName, baseUrl, apiKey)
+        openConnection(connectionName, baseUrl, apiKey, insecureTls)
         initialiseServices()
     }
     // Local only client
@@ -113,14 +113,14 @@ class MauroDataMapperClient implements Closeable {
         NAMED_CONNECTIONS[name]
     }
 
-    void openConnection(String name, String baseUrl, String username, String password) {
+    void openConnection(String name, String baseUrl, String username, String password, Boolean insecureTls) {
         closeConnection(name)
-        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, username, password)
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, username, password, insecureTls)
     }
 
-    void openConnection(String name, String baseUrl, UUID apiKey) {
+    void openConnection(String name, String baseUrl, UUID apiKey, Boolean insecureTls) {
         closeConnection(name)
-        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, apiKey)
+        NAMED_CONNECTIONS[name] = new MauroDataMapperConnection(baseUrl, apiKey, insecureTls)
     }
 
     void openConnection(String name, Properties properties) {
