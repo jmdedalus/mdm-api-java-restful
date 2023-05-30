@@ -60,11 +60,11 @@ class MauroDataMapperClient implements Closeable {
         this(DEFAULT_CONNECTION_NAME, properties)
     }
 
-    MauroDataMapperClient(String baseUrl, String username, String password, Boolean insecureTls) {
+    MauroDataMapperClient(String baseUrl, String username, String password, Boolean insecureTls = false) {
         this(DEFAULT_CONNECTION_NAME, baseUrl, username, password, insecureTls)
     }
 
-    MauroDataMapperClient(String baseUrl, UUID apiKey, Boolean insecureTls) {
+    MauroDataMapperClient(String baseUrl, UUID apiKey, Boolean insecureTls = false) {
         this(DEFAULT_CONNECTION_NAME, baseUrl, apiKey, insecureTls)
     }
 
@@ -73,13 +73,13 @@ class MauroDataMapperClient implements Closeable {
                 properties.getProperty("client.password"), Boolean.parseBoolean(properties.getProperty("client.insecure", "false")))
     }
 
-    MauroDataMapperClient(String connectionName, String baseUrl, String username, String password, Boolean insecureTls) {
+    MauroDataMapperClient(String connectionName, String baseUrl, String username, String password, Boolean insecureTls = false) {
         defaultConnectionName = connectionName
         openConnection(connectionName, baseUrl, username, password, insecureTls)
         initialiseServices()
     }
 
-    MauroDataMapperClient(String connectionName, String baseUrl, UUID apiKey, Boolean insecureTls) {
+    MauroDataMapperClient(String connectionName, String baseUrl, UUID apiKey, Boolean insecureTls = false) {
         defaultConnectionName = connectionName
         openConnection(connectionName, baseUrl, apiKey, insecureTls)
         initialiseServices()
