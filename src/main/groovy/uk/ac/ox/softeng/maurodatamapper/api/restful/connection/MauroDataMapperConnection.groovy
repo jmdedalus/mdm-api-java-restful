@@ -17,6 +17,7 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.api.restful.connection
 
+import io.micronaut.http.ssl.ClientSslConfiguration
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.ClientUser
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.RestClientInterface
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.MauroDataMapperEndpoint
@@ -56,13 +57,13 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
     HttpClient client
     NettyCookie currentCookie
 
-    MauroDataMapperConnection(String baseUrl, String username, String password) {
-        setClient(baseUrl)
+    MauroDataMapperConnection(String baseUrl, String username, String password, Boolean insecureTls = false) {
+        setClient(baseUrl, insecureTls)
         login(username, password)
     }
 
-    MauroDataMapperConnection(String baseUrl, UUID apiKey) {
-        setClient(baseUrl)
+    MauroDataMapperConnection(String baseUrl, UUID apiKey, Boolean insecureTls = false) {
+        setClient(baseUrl, insecureTls)
         this.apiKey = apiKey
         getUserDetails()
     }
@@ -72,15 +73,21 @@ class MauroDataMapperConnection implements DataBinder, Closeable, RestClientInte
         getUserDetails()
     }
 
-
-
-    void setClient(String baseUrl) {
+    void setClient(String baseUrl, Boolean insecureTls) {
         this.baseUrl = baseUrl + "/api/"
+
+        if(insecureTls) log.warn("Insecure TLS is enabled!! Do not use this option when connecting to production instances")
+
         this.client = new DefaultHttpClient(new URI(this.baseUrl),
                                             new DefaultHttpClientConfiguration().with {
                                                 setReadTimeout(Duration.ofMinutes(30))
                                                 setReadIdleTimeout(Duration.ofMinutes(30))
                                                 setMaxContentLength(1000 * 1024 * 1024)
+                                                setSslConfiguration(new ClientSslConfiguration().with{
+                                                    enabled = true
+                                                    insecureTrustAllCertificates = insecureTls
+                                                    it
+                                                })
                                                 it
                                             })
 
