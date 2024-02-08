@@ -22,7 +22,6 @@ import uk.ac.ox.softeng.maurodatamapper.api.restful.client.ClientUser
 import uk.ac.ox.softeng.maurodatamapper.api.restful.client.RestClientInterface
 import uk.ac.ox.softeng.maurodatamapper.api.restful.connection.endpoint.MauroDataMapperEndpoint
 import uk.ac.ox.softeng.maurodatamapper.api.restful.exception.ApiClientException
-import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
 import grails.web.databinding.DataBinder
 import groovy.transform.CompileDynamic

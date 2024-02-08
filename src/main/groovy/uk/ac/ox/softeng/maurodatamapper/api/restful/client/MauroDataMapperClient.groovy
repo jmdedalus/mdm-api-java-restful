@@ -25,7 +25,9 @@ import uk.ac.ox.softeng.maurodatamapper.api.restful.render.json.JsonViewRenderer
 import uk.ac.ox.softeng.maurodatamapper.core.facet.Metadata
 import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.FileParameter
 import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
+import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModelService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.facet.SummaryMetadata
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataClassService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.exporter.DataModelJsonExporterService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelFileImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelImporterProviderServiceParameters
@@ -310,6 +312,10 @@ class MauroDataMapperClient implements Closeable {
         getConnection(connectionName).GET(MauroDataMapperEndpoint.TERMINOLOGY_EXPORTERS.build(), Argument.listOf(Map)).body()
     }
 
+    List<Map> listCodeSetExporters(String connectionName = defaultConnectionName) {
+        getConnection(connectionName).GET(MauroDataMapperEndpoint.CODESET_EXPORTERS.build(), Argument.listOf(Map)).body()
+    }
+
     Map getJsonDataModelImporterProperties(String connectionName = defaultConnectionName) {
         listDataModelImporters(connectionName).find { imp -> imp.name == 'DataModelJsonImporterService' }
     }
@@ -324,6 +330,10 @@ class MauroDataMapperClient implements Closeable {
 
     Map getJsonTerminologyExporterProperties(String connectionName = defaultConnectionName) {
         listTerminologyExporters(connectionName).find { imp -> imp.name == 'TerminologyJsonExporterService' }
+    }
+
+    Map getJsonCodeSetExporterProperties(String connectionName = defaultConnectionName) {
+        listCodeSetExporters(connectionName).find { imp -> imp.name == 'CodeSetJsonExporterService' }
     }
 
     Map exportDataModel(UUID dataModelId, String exporterNamespace, String exporterName, String exporterVersion,
@@ -364,6 +374,29 @@ class MauroDataMapperClient implements Closeable {
                           exporterProperties.version as String,
                           connectionName).terminology as Map
     }
+
+    Map exportCodeSet(UUID codeSetId, String exporterNamespace, String exporterName, String exporterVersion,
+                          String connectionName = defaultConnectionName) {
+        getConnection(connectionName).GET(
+            MauroDataMapperEndpoint.CODESET_EXPORT.build(codeSetId: codeSetId,
+                                                             exporterNamespace: exporterNamespace,
+                                                             exporterName: exporterName,
+                                                             exporterVersion: exporterVersion)
+        ).body()
+    }
+
+    Map exportCodeSet(UUID codeSetId, String connectionName = defaultConnectionName) {
+        Map exporterProperties = getJsonCodeSetExporterProperties(connectionName)
+
+        exportCodeSet(codeSetId,
+                          exporterProperties.namespace as String,
+                          exporterProperties.name as String,
+                          exporterProperties.version as String,
+                          connectionName).codeSet as Map
+    }
+
+
+
 
     Map importDataModel(String importerNamespace, String importerName, String importerVersion,
                         DataModelImporterProviderServiceParameters parameters,
@@ -481,6 +514,17 @@ class MauroDataMapperClient implements Closeable {
         } else return null
     }
 
+    UUID findCodeSetIdByName(String name, String connectionName = defaultConnectionName) {
+        Map codeSet = getConnection(connectionName).GET(
+            MauroDataMapperEndpoint.CODESET_LIST.build()
+        ).body().items.find { Map m ->
+            isLabelMatch(m.label as String, name)
+        } as Map
+        if(codeSet) {
+            return Utils.toUuid(codeSet.id as String)
+        } else return null
+    }
+
     UUID findFolderByName(String name, UUID parentFolderId = null, String connectionName = defaultConnectionName) {
         String endpoint = parentFolderId ? MauroDataMapperEndpoint.FOLDER_LIST_FOLDERS.build(folderId: parentFolderId) :
                           MauroDataMapperEndpoint.FOLDERS_LIST.build()
@@ -536,11 +580,87 @@ class MauroDataMapperClient implements Closeable {
         ).body()
     }
 
+    Map updateDataElementName(UUID dataModelId, UUID dataClassId, UUID dataElementId, String label,
+                                     String connectionName = defaultConnectionName) {
+
+        getConnection(connectionName).PUT(
+            MauroDataMapperEndpoint.DATAELEMENT_ID.build(dataModelId: dataModelId,
+                                                         dataClassId: dataClassId,
+                                                         id: dataElementId),
+            [label: label]
+        ).body()
+    }
+
+    Map updateDataElementMultiplicity(UUID dataModelId, UUID dataClassId, UUID dataElementId, Integer minMultiplicity, Integer maxMultiplicity,
+                                      String connectionName = defaultConnectionName) {
+
+        getConnection(connectionName).PUT(
+            MauroDataMapperEndpoint.DATAELEMENT_ID.build(dataModelId: dataModelId,
+                                                         dataClassId: dataClassId,
+                                                         id: dataElementId),
+            [minMultiplicity: minMultiplicity, maxMultiplicity: maxMultiplicity]
+        ).body()
+    }
+
+    Map updateDataTypeName(UUID dataModelId, UUID dataTypeId, String label,
+                              String connectionName = defaultConnectionName) {
+
+        getConnection(connectionName).PUT(
+            MauroDataMapperEndpoint.DATATYPE_ID.build(dataModelId: dataModelId,
+                                                         dataTypeId: dataTypeId),
+            [label: label]
+        ).body()
+    }
+
     Map updateTermDescription(UUID terminologyId, UUID termId, String newDescription, String connectionName = defaultConnectionName) {
         getConnection(connectionName).PUT(
             MauroDataMapperEndpoint.TERM_ID.build(terminologyId: terminologyId,
                                                   id: termId),
             [description: newDescription]
+        ).body()
+    }
+
+    Map updateDataClassNameAndDescription(UUID dataModelId, UUID dataClassId, String label, String newDescription,
+                                   String connectionName = defaultConnectionName) {
+        String endpoint = MauroDataMapperEndpoint.DATACLASS_ID.build(dataModelId: dataModelId,
+                                                                     id: dataClassId)
+        getConnection(connectionName).PUT(
+            endpoint,
+            [label: label, description: newDescription]
+        ).body()
+    }
+
+    Map updateDataClassNameAndDescription(UUID dataModelId, UUID parentClassId, UUID dataClassId, String label, String newDescription,
+                                          String connectionName = defaultConnectionName) {
+        String endpoint = MauroDataMapperEndpoint.DATACLASS_DATACLASS_ID.build(
+            dataModelId: dataModelId,
+            dataClassId: parentClassId,
+            id: dataClassId)
+        getConnection(connectionName).PUT(
+            endpoint,
+            [label: label, description: newDescription]
+        ).body()
+    }
+
+    Map updateDataClassName(UUID dataModelId, UUID dataClassId, String label,
+                                          String connectionName = defaultConnectionName) {
+        String endpoint = MauroDataMapperEndpoint.DATACLASS_ID.build(dataModelId: dataModelId,
+                                                                     id: dataClassId)
+        getConnection(connectionName).PUT(
+            endpoint,
+            [   label: label ]
+        ).body()
+    }
+
+    Map updateDataClassName(UUID dataModelId, UUID parentClassId, UUID dataClassId, String label,
+                                          String connectionName = defaultConnectionName) {
+        String endpoint = MauroDataMapperEndpoint.DATACLASS_DATACLASS_ID.build(
+            dataModelId: dataModelId,
+            dataClassId: parentClassId,
+            id: dataClassId)
+        getConnection(connectionName).PUT(
+            endpoint,
+            [label: label]
         ).body()
     }
 
@@ -555,6 +675,27 @@ class MauroDataMapperClient implements Closeable {
             endpoint,
             [description: newDescription]
         ).body()
+    }
+
+    Map getDataClassDetails(UUID dataModelId, UUID parentClassId, UUID dataClassId, String connectionName = defaultConnectionName) {
+        String endpoint = parentClassId ? MauroDataMapperEndpoint.DATACLASS_DATACLASS_ID.build(dataModelId: dataModelId,
+                                                                                               dataClassId: parentClassId,
+                                                                                               id: dataClassId) :
+                          MauroDataMapperEndpoint.DATACLASS_ID.build(dataModelId: dataModelId,
+                                                                     id: dataClassId)
+
+        getConnection(connectionName).GET(endpoint).body()
+    }
+
+    Map setDataClassExtendsDataClass(UUID sourceDataModelId, UUID sourceDataClassId, UUID targetDataModelId, UUID targetDataClassId, String connectionName = defaultConnectionName) {
+        String endpoint = MauroDataMapperEndpoint.DATACLASS_EXTENDS_DATACLASS.build(
+            sourceDataModelId: sourceDataModelId,
+            sourceDataClassId: sourceDataClassId,
+            targetDataModelId: targetDataModelId,
+            targetDataClassId: targetDataClassId
+        )
+
+        getConnection(connectionName).PUT(endpoint, [:]).body()
     }
 
     UUID findOrCreateFolderByName(String name, UUID parentFolder = null, String connectionName = defaultConnectionName) {
@@ -581,4 +722,132 @@ class MauroDataMapperClient implements Closeable {
     private static boolean isLabelMatch(String left, String right) {
         left.trim() == right.trim()
     }
+
+    UUID createRefineSemanticLinkOnDataElement(UUID dataElementId, String targetDomainType, UUID targetId, String connectionName = defaultConnectionName) {
+        Map semanticLink = [
+                                "targetMultiFacetAwareItemDomainType": targetDomainType,
+                                "targetMultiFacetAwareItemId": targetId.toString(),
+                                "linkType": "Refines",
+                                "unconfirmed": false
+                            ]
+
+        String id = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.DATAELEMENT_SEMANTIC_LINKS.build(id: dataElementId),
+                semanticLink
+        ).body().id
+        return Utils.toUuid(id)
+    }
+    UUID createRefineSemanticLinkOnDataClass(UUID dataClassId, String targetDomainType, UUID targetId, String connectionName = defaultConnectionName) {
+        Map semanticLink = [
+                "targetMultiFacetAwareItemDomainType": targetDomainType,
+                "targetMultiFacetAwareItemId": targetId.toString(),
+                "linkType": "Refines",
+                "unconfirmed": false
+        ]
+        String id = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.DATACLASS_SEMANTIC_LINKS.build(id: dataClassId),
+                semanticLink
+        ).body().id
+        return Utils.toUuid(id)
+    }
+
+    UUID createDataFlowOnDataModel(UUID sourceDataModelId, UUID targetDataModelId, String label, String description, String connectionName = defaultConnectionName) {
+        Map dataFlow = [
+                "label": label,
+                "description": description,
+                "source": [
+                        "id": sourceDataModelId
+                ]
+        ]
+
+        def body = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.DATAFLOW.build(id: targetDataModelId.toString()), dataFlow).body()
+        String id =body.id
+        return Utils.toUuid(id)
+    }
+    UUID createDataClassComponentOnDataFlow(UUID targetDataModelId, UUID dataFlowId, String label, String description, List<UUID> sourceDataClasses, List<UUID> targetDataClasses,
+                                            String connectionName = defaultConnectionName) {
+        Map dataClassComponent = [
+                "label": label,
+                "description": description,
+                "sourceDataClasses": [],
+                "targetDataClasses": []
+        ]
+        sourceDataClasses.each {sourceDataClassId ->
+            ((List)dataClassComponent.sourceDataClasses).add([id: sourceDataClassId])
+        }
+        targetDataClasses.each {targetDataClassId ->
+            ((List)dataClassComponent.targetDataClasses).add([id: targetDataClassId])
+        }
+
+        def body = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.DATAFLOW_DATACLASSCOMPONENT.build(dataModelId: targetDataModelId.toString(), dataFlowId: dataFlowId), dataClassComponent).body()
+        System.err.println(MauroDataMapperEndpoint.DATAFLOW_DATACLASSCOMPONENT.build(dataModelId: targetDataModelId.toString(), dataFlowId: dataFlowId))
+        System.err.println(body)
+        String id =body.id
+        return Utils.toUuid(id)
+    }
+
+    UUID createDataElementComponentOnDataClassComponent(UUID targetDataModelId, UUID dataFlowId, UUID dataClassComponentId, String label, String description,
+                                                        List<UUID> sourceDataElements, List<UUID> targetDataElements,
+                                            String connectionName = defaultConnectionName) {
+        Map dataElementComponent = [
+                "label": label,
+                "description": description,
+                "sourceElements": sourceDataElements.collect { [id: it.toString()]},
+                "targetElements": targetDataElements.collect { [id: it.toString()]}
+        ]
+        System.err.println(MauroDataMapperEndpoint.DATAFLOW_DATAELEMENTCOMPONENT
+                .build(dataModelId: targetDataModelId.toString(),
+                        dataFlowId: dataFlowId.toString(),
+                        dataClassComponentId: dataClassComponentId.toString()))
+        def body = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.DATAFLOW_DATAELEMENTCOMPONENT
+                        .build(dataModelId: targetDataModelId.toString(),
+                                dataFlowId: dataFlowId.toString(),
+                                dataClassComponentId: dataClassComponentId.toString()),
+                            dataElementComponent).body()
+        System.err.println(body)
+        String id =body.id
+        return Utils.toUuid(id)
+    }
+
+    UUID createDataClass(UUID dataModelId, String label, String description, Integer minMultiplicity, Integer maxMultiplicity, String connectionName = defaultConnectionName) {
+        Map<String, Object> dataClass = [
+            "label": label,
+            "description": description
+        ] as Map<String, Object>
+        if(minMultiplicity) {
+            dataClass["minMultiplicity"] = minMultiplicity
+        }
+        if(maxMultiplicity) {
+            dataClass["maxMultiplicity"] = maxMultiplicity
+        }
+
+        def body = getConnection(connectionName).POST(
+            MauroDataMapperEndpoint.DATACLASSES.build(dataModelId: dataModelId.toString()), dataClass).body()
+        String id =body.id
+        return Utils.toUuid(id)
+    }
+
+    UUID createDataClass(UUID dataModelId, UUID dataClassId, String label, String description, Integer minMultiplicity, Integer maxMultiplicity, String connectionName = defaultConnectionName) {
+        Map<String, Object> dataClass = [
+            "label": label,
+            "description": description
+        ] as Map<String, Object>
+        if(minMultiplicity) {
+            dataClass["minMultiplicity"] = minMultiplicity
+        }
+        if(maxMultiplicity) {
+            dataClass["maxMultiplicity"] = maxMultiplicity
+        }
+
+        def body = getConnection(connectionName).POST(
+            MauroDataMapperEndpoint.DATACLASS_DATACLASSES.build(dataModelId: dataModelId.toString(), dataClassId: dataClassId.toString()), dataClass).body()
+        String id =body.id
+        return Utils.toUuid(id)
+    }
+
+
+
 }

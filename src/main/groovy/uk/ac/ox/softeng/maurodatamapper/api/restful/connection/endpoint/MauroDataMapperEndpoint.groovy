@@ -33,6 +33,9 @@ enum MauroDataMapperEndpoint {
     TERMINOLOGY_IMPORTERS('terminologies/providers/importers'),
     TERMINOLOGY_EXPORTERS('terminologies/providers/exporters'),
 
+    CODESET_IMPORTERS('codeSets/providers/importers'),
+    CODESET_EXPORTERS('codeSets/providers/exporters'),
+
     DATAMODEL_IMPORT('dataModels/import/{importerNamespace}/{importerName}/{importerVersion}'),
     TERMINOLOGY_IMPORT('terminologies/import/{importerNamespace}/{importerName}/{importerVersion}'),
 
@@ -61,9 +64,13 @@ enum MauroDataMapperEndpoint {
     DATAMODEL_DELETE("dataModels/{dataModelId}?permanent={permanent}"),
     DATAMODEL_EXPORT("dataModels/{dataModelId}/export/{exporterNamespace}/{exporterName}/{exporterVersion}"),
 
+    DATACLASSES("dataModels/{dataModelId}/dataClasses"),
     DATACLASS_ID("dataModels/{dataModelId}/dataClasses/{id}"),
     DATACLASS_DATACLASS_ID("dataModels/{dataModelId}/dataClasses/{dataClassId}/dataClasses/{id}"),
+    DATACLASS_DATACLASSES("dataModels/{dataModelId}/dataClasses/{dataClassId}/dataClasses"),
     DATAELEMENT_ID("dataModels/{dataModelId}/dataClasses/{dataClassId}/dataElements/{id}"),
+
+    DATATYPE_ID("dataModels/{dataModelId}/dataTypes/{dataTypeId}"),
 
     TERMINOLOGY_LIST('terminologies?all=true'),
     TERMINOLOGY_ID('terminologies/{id}'),
@@ -72,8 +79,19 @@ enum MauroDataMapperEndpoint {
 
     TERM_ID("terminologies/{terminologyId}/terms/{termId}"),
 
+    CODESET_LIST('codeSets?all=true'),
     CODESET_ID('codeSets/{id}'),
-    CODESET_DELETE("codeSets/{id}?permanent={permanent}")
+    CODESET_DELETE("codeSets/{id}?permanent={permanent}"),
+    CODESET_EXPORT("codeSets/{codeSetId}/export/{exporterNamespace}/{exporterName}/{exporterVersion}"),
+
+    DATAELEMENT_SEMANTIC_LINKS('dataElement/{id}/semanticLinks'),
+    DATACLASS_SEMANTIC_LINKS('dataClass/{id}/semanticLinks'),
+
+    DATAFLOW('dataModels/{id}/dataFlows'),
+    DATAFLOW_DATACLASSCOMPONENT('dataModels/{dataModelId}/dataFlows/{dataFlowId}/dataClassComponents'),
+    DATAFLOW_DATAELEMENTCOMPONENT('dataModels/{dataModelId}/dataFlows/{dataFlowId}/dataClassComponents/{dataClassComponentId}/dataElementComponents'),
+
+    DATACLASS_EXTENDS_DATACLASS('dataModels/{sourceDataModelId}/dataClasses/{sourceDataClassId}/extends/{targetDataModelId}/{targetDataClassId}')
 
     String representation
 
