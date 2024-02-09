@@ -31,10 +31,14 @@ import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataClassService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.exporter.DataModelJsonExporterService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelFileImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.importer.parameter.DataModelImporterProviderServiceParameters
+import uk.ac.ox.softeng.maurodatamapper.terminology.CodeSet
 import uk.ac.ox.softeng.maurodatamapper.terminology.Terminology
 import uk.ac.ox.softeng.maurodatamapper.terminology.provider.exporter.TerminologyJsonExporterService
 import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.parameter.TerminologyFileImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.parameter.TerminologyImporterProviderServiceParameters
+import uk.ac.ox.softeng.maurodatamapper.terminology.provider.exporter.CodeSetJsonExporterService
+import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.parameter.CodeSetFileImporterProviderServiceParameters
+import uk.ac.ox.softeng.maurodatamapper.terminology.provider.importer.parameter.CodeSetImporterProviderServiceParameters
 import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
 import groovy.transform.CompileStatic
@@ -57,6 +61,8 @@ class MauroDataMapperClient implements Closeable {
     DataModelJsonExporterService dataModelJsonExporterService
 
     TerminologyJsonExporterService terminologyJsonExporterService
+
+    CodeSetJsonExporterService codeSetJsonExporterService
 
     MauroDataMapperClient(Properties properties) {
         this(DEFAULT_CONNECTION_NAME, properties)
@@ -100,7 +106,8 @@ class MauroDataMapperClient implements Closeable {
         dataModelJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
         terminologyJsonExporterService = new TerminologyJsonExporterService()
         terminologyJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
-
+        codeSetJsonExporterService = new CodeSetJsonExporterService()
+        codeSetJsonExporterService.templateEngine = JsonViewRenderer.instance.templateEngine
     }
 
     MauroDataMapperConnection getDefaultConnection() {
@@ -308,6 +315,10 @@ class MauroDataMapperClient implements Closeable {
         getConnection(connectionName).GET(MauroDataMapperEndpoint.TERMINOLOGY_IMPORTERS.build(), Argument.listOf(Map)).body()
     }
 
+    List<Map> listCodeSetImporters(String connectionName = defaultConnectionName) {
+        getConnection(connectionName).GET(MauroDataMapperEndpoint.CODESET_IMPORTERS.build(), Argument.listOf(Map)).body()
+    }
+
     List<Map> listTerminologyExporters(String connectionName = defaultConnectionName) {
         getConnection(connectionName).GET(MauroDataMapperEndpoint.TERMINOLOGY_EXPORTERS.build(), Argument.listOf(Map)).body()
     }
@@ -322,6 +333,10 @@ class MauroDataMapperClient implements Closeable {
 
     Map getJsonTerminologyImporterProperties(String connectionName = defaultConnectionName) {
         listTerminologyImporters(connectionName).find { imp -> imp.name == 'TerminologyJsonImporterService' }
+    }
+
+    Map getJsonCodeSetImporterProperties(String connectionName = defaultConnectionName) {
+        listCodeSetImporters(connectionName).find { imp -> imp.name == 'CodeSetJsonImporterService' }
     }
 
     Map getJsonDataModelExporterProperties(String connectionName = defaultConnectionName) {
@@ -437,6 +452,25 @@ class MauroDataMapperClient implements Closeable {
         response.body()
     }
 
+    Map importCodeSet(String importerNamespace, String importerName, String importerVersion,
+                          CodeSetImporterProviderServiceParameters parameters,
+                          String connectionName = defaultConnectionName) {
+
+        HttpResponse<Map> response = getConnection(connectionName).POST(
+                MauroDataMapperEndpoint.CODESET_IMPORT.build(importerNamespace: importerNamespace,
+                        importerName: importerName,
+                        importerVersion: importerVersion),
+                JsonViewRenderer.instance.renderDomain(parameters),
+                Argument.of(Map)
+        )
+        if (response.status() != HttpStatus.CREATED) {
+            throw new ApiClientException('CXX', 'Could not import CodeSet', MauroDataMapperEndpoint.CODESET_IMPORT.representation,
+                    HttpStatus.CREATED, response)
+        }
+        response.body()
+    }
+
+
     UUID importDataModel(DataModel dataModel, UUID folderId, String dataModelName, Boolean finalised, Boolean importAsNewBranchModelVersion,
                          Boolean importAsNewDocumentationVersion,
                          String connectionName = defaultConnectionName) {
@@ -485,6 +519,30 @@ class MauroDataMapperClient implements Closeable {
         )
         Map importerProperties = getJsonTerminologyImporterProperties(connectionName)
         def result = importTerminology(
+                importerProperties.namespace as String,
+                importerProperties.name as String,
+                importerProperties.version as String,
+                parameters, connectionName)
+        Utils.toUuid(((Map)((List)result.items)[0]).id.toString())
+    }
+
+    UUID importCodeSet(CodeSet codeSet, UUID folderId, String codeSetName, Boolean finalised, Boolean importAsNewBranchModelVersion,
+                       Boolean importAsNewDocumentationVersion, String connectionName = defaultConnectionName){
+        FileParameter fileParameter = new FileParameter("temporaryFile", "",
+                codeSetJsonExporterService.exportCodeSet(
+                        getConnection(connectionName).clientUser,
+                        codeSet,
+                        [:]
+                ).toByteArray())
+        CodeSetFileImporterProviderServiceParameters parameters = new CodeSetFileImporterProviderServiceParameters(
+                folderId: folderId,
+                modelName: codeSetName,
+                finalised: finalised,
+                importAsNewDocumentationVersion: importAsNewDocumentationVersion,
+                importFile: fileParameter
+        )
+        Map importerProperties = getJsonCodeSetImporterProperties(connectionName)
+        def result = importCodeSet(
                 importerProperties.namespace as String,
                 importerProperties.name as String,
                 importerProperties.version as String,

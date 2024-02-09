@@ -9,17 +9,19 @@ buildscript {
         maven {url "https://repo.grails.org/grails/core"}
 
     }
+
     dependencies {
         classpath "uk.ac.ox.softeng.maurodatamapper.gradle:mdm-gradle-plugin:$mdmGradlePluginVersion"
     }
 }
 
 
-
 plugins {
     id 'groovy'
     id 'java-library'
+    id 'maven-publish'
 }
+
 
 apply plugin: 'uk.ac.ox.softeng.maurodatamapper.gradle.mdm-gradle'
 

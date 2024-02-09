@@ -38,6 +38,7 @@ enum MauroDataMapperEndpoint {
 
     DATAMODEL_IMPORT('dataModels/import/{importerNamespace}/{importerName}/{importerVersion}'),
     TERMINOLOGY_IMPORT('terminologies/import/{importerNamespace}/{importerName}/{importerVersion}'),
+    CODESET_IMPORT('codeSets/import/{importerNamespace}/{importerName}/{importerVersion}'),
 
     SUMMARY_METADATA_LIST('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata?all=true'),
     SUMMARY_METADATA_CREATE('{catalogueItemDomainType}/{catalogueItemId}/summaryMetadata'),
